@@ -2,11 +2,27 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
+// Import Shared Spinner Loader
+import Spinner from '../../Shared/loaders/Spinner';
+
+// Import logo asset
 import schoolLogo from '../../../assets/logo.png';
 
 const StaffLogin = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    // Simulated network/auth delay before routing to staff dashboard
+    setTimeout(() => {
+      setIsLoading(false);
+      navigate('/staff/dashboard');
+    }, 1200);
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 w-full h-full min-h-[580px] bg-white">
@@ -23,7 +39,7 @@ const StaffLogin = () => {
             </p>
           </div>
 
-          <form onSubmit={(e) => { e.preventDefault(); navigate('/staff/dashboard'); }} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">
                 Staff ID / Work Email
@@ -96,11 +112,16 @@ const StaffLogin = () => {
 
             <motion.button
               type="submit"
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full bg-brand-coral hover:bg-orange-600 text-white font-bold py-3.5 rounded-xl shadow-button hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 mt-4 cursor-pointer"
+              disabled={isLoading}
+              whileHover={{ scale: isLoading ? 1 : 1.01 }}
+              whileTap={{ scale: isLoading ? 1 : 0.98 }}
+              className="w-full bg-brand-coral hover:bg-orange-600 text-white font-bold py-3.5 rounded-xl shadow-button hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 mt-4 cursor-pointer disabled:opacity-80 disabled:cursor-not-allowed"
             >
-              <span>Login to Staff Portal</span>
+              {isLoading ? (
+                <Spinner size="sm" color="white" />
+              ) : (
+                <span>Login to Staff Portal</span>
+              )}
             </motion.button>
           </form>
         </div>
@@ -122,7 +143,7 @@ const StaffLogin = () => {
 
         <div className="relative z-10 space-y-6">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-white rounded-xl p-1.5 flex items-center justify-center shadow-md">
+            <div className="w-12 h-12  flex items-center justify-center ">
               <img src={schoolLogo} alt="HighFlyer Logo" className="w-full h-full object-contain" />
             </div>
             <div className="flex flex-col">

@@ -1,9 +1,26 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Import Shared Spinner Loader
+import Spinner from '../../Shared/loaders/Spinner';
 
 const Navbar = ({ logoSrc }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoadingLogin, setIsLoadingLogin] = useState(false);
+  const navigate = useNavigate();
+
+  const handlePortalLoginClick = (e) => {
+    e.preventDefault();
+    setIsLoadingLogin(true);
+    setIsMobileMenuOpen(false);
+
+    // Short transition delay before routing to parent login
+    setTimeout(() => {
+      setIsLoadingLogin(false);
+      navigate('/parent/login');
+    }, 600);
+  };
 
   const navLinks = [
     { name: 'About Us', to: '/about', isPageRoute: true },
@@ -99,16 +116,23 @@ const Navbar = ({ logoSrc }) => {
               )}
             </nav>
 
-            {/* Portal Login Action Button -> Routes to Parent Login */}
-            <Link
-              to="/parent/login"
-              className="inline-flex items-center justify-center space-x-2 bg-brand-blue hover:bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-xl shadow-button hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 cursor-pointer"
+            {/* Portal Login Action Button -> Routes to Parent Login with Spinner */}
+            <button
+              onClick={handlePortalLoginClick}
+              disabled={isLoadingLogin}
+              className="inline-flex items-center justify-center space-x-2 bg-brand-blue hover:bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-xl shadow-button hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-80 disabled:cursor-not-allowed min-w-[135px]"
             >
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              <span>Portal Login</span>
-            </Link>
+              {isLoadingLogin ? (
+                <Spinner size="sm" color="white" />
+              ) : (
+                <>
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <span>Portal Login</span>
+                </>
+              )}
+            </button>
           </div>
 
           {/* Mobile Hamburger Button */}
@@ -143,7 +167,7 @@ const Navbar = ({ logoSrc }) => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="md:hidden fixed inset-0 top-[80px] bg-brand-navy/20 backdrop-blur-sm z-40"
+              className="md:hidden fixed inset-0 top-[80px] bg-brand-navy/25 backdrop-blur-sm z-40"
             />
 
             {/* Animated Drawer */}
@@ -178,18 +202,24 @@ const Navbar = ({ logoSrc }) => {
                 )
               )}
 
-              {/* Action Button inside Drawer -> Routes to Parent Login */}
+              {/* Action Button inside Drawer -> Routes to Parent Login with Spinner */}
               <motion.div variants={itemVariants} className="pt-2">
-                <Link
-                  to="/parent/login"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center space-x-2 bg-brand-blue hover:bg-blue-600 text-white font-semibold px-5 py-3 rounded-xl shadow-md transition-colors cursor-pointer"
+                <button
+                  onClick={handlePortalLoginClick}
+                  disabled={isLoadingLogin}
+                  className="w-full flex items-center justify-center space-x-2 bg-brand-blue hover:bg-blue-600 text-white font-semibold px-5 py-3 rounded-xl shadow-md transition-colors cursor-pointer disabled:opacity-80"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  <span>Portal Login</span>
-                </Link>
+                  {isLoadingLogin ? (
+                    <Spinner size="sm" color="white" />
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      <span>Portal Login</span>
+                    </>
+                  )}
+                </button>
               </motion.div>
             </motion.div>
           </>

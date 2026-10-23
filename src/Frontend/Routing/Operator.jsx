@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 
-//Scroll Effect
+// Scroll Effect
 import ScrollRevealSection from '../Landing Page/utils/ScrollRevealSection';
 
 // Persistent Layout Elements
@@ -27,13 +27,13 @@ import schoolLogo from '../../assets/logo.png';
 const Operator = () => {
   const location = useLocation();
 
-  // Check if the current route is strictly the main landing page
-  const isLandingPage = location.pathname === '/';
+  // Check if the current route is strictly a public page ('/' or '/about')
+  const isPublicPage = location.pathname === '/' || location.pathname === '/about';
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
-      {/* Top Header Navigation */}
-      <Navbar logoSrc={schoolLogo} />
+      {/* Top Header Navigation - Rendered ONLY on public landing/about pages */}
+      {isPublicPage && <Navbar logoSrc={schoolLogo} />}
 
       {/* Main Content Area */}
       <main className="flex-grow">
@@ -82,8 +82,8 @@ const Operator = () => {
         </Routes>
       </main>
 
-      {/* Persistent Footer - Rendered ONLY on the landing page */}
-      {isLandingPage && <Footer logoSrc={schoolLogo} />}
+      {/* Persistent Footer - Rendered ONLY on public landing/about pages */}
+      {isPublicPage && <Footer logoSrc={schoolLogo} />}
     </div>
   );
 };

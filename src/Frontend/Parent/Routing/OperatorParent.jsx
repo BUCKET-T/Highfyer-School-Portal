@@ -1,8 +1,27 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 
-// Import Parent Portal views
+// Import Login view
 import LoginEffect from '../../Landing Page/Log/LoginEffect';
+
+// Import Sidebar component
+import Sidebar from '../Components/Sidebar';
+
+// Import Parent Portal pages
+import Dashboard from '../Pages/Dashboard';
+import MyCourses from '../Pages/MyCourses';
+
+// Parent Layout Wrapper: Locks viewport height so sidebar stays fixed while main content scrolls independently
+const ParentLayout = () => {
+  return (
+    <div className="flex flex-col md:flex-row h-screen bg-slate-50 w-full overflow-hidden">
+      <Sidebar />
+      <main className="flex-1 w-full min-w-0 h-full overflow-y-auto">
+        <Outlet />
+      </main>
+    </div>
+  );
+};
 
 const OperatorParent = () => {
   return (
@@ -10,17 +29,14 @@ const OperatorParent = () => {
       {/* Default redirect to login page */}
       <Route path="/" element={<Navigate to="login" replace />} />
       
-      {/* Parent Portal Routes */}
+      {/* Standalone Login Route (No Sidebar) */}
       <Route path="login" element={<LoginEffect />} />
 
-      <Route 
-        path="dashboard" 
-        element={
-          <div className="p-8 text-center text-xl font-bold text-brand-navy">
-            Parent Dashboard & Child Academic Progress
-          </div>
-        } 
-      />
+      {/* Authenticated Parent Portal (Wrapped with Responsive Layout) */}
+      <Route element={<ParentLayout />}>
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="courses" element={<MyCourses />} />
+      </Route>
 
       {/* Fallback for unmapped parent paths */}
       <Route path="*" element={<Navigate to="login" replace />} />
