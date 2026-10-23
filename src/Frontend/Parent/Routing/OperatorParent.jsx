@@ -12,6 +12,8 @@ import Dashboard from '../Pages/Dashboard';
 import MyCourses from '../Pages/MyCourses';
 import Results from '../Pages/Result';
 import Assignments from '../Pages/Assignments'; 
+import Feed from '../Pages/Feed';
+import Settings from '../Pages/Settings';
 
 // Parent Layout Wrapper: Locks viewport height so sidebar stays fixed while main content scrolls independently
 const ParentLayout = () => {
@@ -40,6 +42,9 @@ const OperatorParent = () => {
         <Route path="courses" element={<MyCourses />} />
         <Route path="assignments" element={<Assignments />} />
         <Route path="results" element={<Results />} />
+        <Route path="feed" element={<Feed />} />
+        <Route path="settings" element={<Settings />} />
+
       </Route>
 
       {/* Fallback for unmapped parent paths */}
