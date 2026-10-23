@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Import the actual school logo asset relative to this component's depth
 import schoolLogo from '../../../assets/logo.png';
 
-const StaffSidebar = () => {
+const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
   const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -84,111 +84,137 @@ const StaffSidebar = () => {
 
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
-    navigate('/');
+    navigate('/staff/login');
   };
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full justify-between p-5 text-slate-300">
-      
-      {/* Top Branding Header with School Logo Image */}
-      <div className="space-y-6">
-        <div className="flex items-center space-x-3 px-2 pt-2">
-          <img
-            src={schoolLogo}
-            alt="Highflyer Academy Logo"
-            className="w-10 h-10 object-contain flex-shrink-0"
-          />
-          <div>
-            <h2 className="text-base font-extrabold text-white tracking-tight leading-none">
-              Highflyer
-            </h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pt-1">
-              STAFF PORTAL
-            </p>
-          </div>
-        </div>
+  const SidebarContent = ({ forceExpanded = false }) => {
+    const collapsed = isCollapsed && !forceExpanded;
 
-        {/* Navigation Links */}
-        <nav className="space-y-2">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.name}
-              to={item.path}
-              onClick={() => setIsMobileOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center space-x-3.5 px-4 py-3 rounded-2xl text-sm font-extrabold transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/30'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                }`
-              }
-            >
-              {item.icon}
-              <span>{item.name}</span>
-            </NavLink>
-          ))}
-        </nav>
-      </div>
-
-      {/* Bottom Section: Logout Button + Teacher Card */}
-      <div className="space-y-4 pt-6 border-t border-slate-800/80">
+    return (
+      <div className={`flex flex-col h-full justify-between ${collapsed ? 'p-3 items-center' : 'p-5'} text-slate-300 transition-all duration-300`}>
         
-        {/* Logout Trigger Button */}
-        <button
-          type="button"
-          onClick={() => setShowLogoutModal(true)}
-          className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl text-sm font-extrabold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all cursor-pointer"
-        >
-          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          <span>Logout</span>
-        </button>
+        {/* Top Branding Header with School Logo & Collapse Toggle */}
+        <div className="space-y-6 w-full">
+          <div className={`flex items-center ${collapsed ? 'justify-center flex-col space-y-3' : 'space-x-3 justify-between'} px-1 pt-2`}>
+            <div className="flex items-center space-x-3 overflow-hidden">
+              <img
+                src={schoolLogo}
+                alt="Highflyer Academy Logo"
+                className="w-10 h-10 object-contain flex-shrink-0"
+              />
+              {!collapsed && (
+                <div className="whitespace-nowrap overflow-hidden">
+                  <h2 className="text-base font-extrabold text-white tracking-tight leading-none">
+                    Highflyer
+                  </h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pt-1">
+                    STAFF PORTAL
+                  </p>
+                </div>
+              )}
+            </div>
 
-        {/* Teacher Card Below Logout */}
-        <div className="bg-slate-800/70 border border-slate-700/60 p-3.5 rounded-2xl flex items-center space-x-3.5 shadow-sm">
-          <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-            alt="Mr. James Doe"
-            className="w-11 h-11 rounded-full object-cover border-2 border-sky-400 shadow-sm flex-shrink-0"
-          />
-          <div className="overflow-hidden">
-            <h4 className="text-sm font-extrabold text-white truncate">
-              Mr. James Doe
-            </h4>
-            <p className="text-[10px] font-bold text-sky-400 uppercase tracking-wider truncate">
-              SENIOR EDUCATOR
-            </p>
+            {/* Collapse Toggle Button (Desktop Only) */}
+            {!forceExpanded && (
+              <button
+                type="button"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800/80 transition-all cursor-pointer focus:outline-none"
+                title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            )}
           </div>
+
+          {/* Navigation Links */}
+          <nav className="space-y-2 w-full">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.name}
+                to={item.path}
+                onClick={() => setIsMobileOpen(false)}
+                title={collapsed ? item.name : ''}
+                className={({ isActive }) =>
+                  `flex items-center ${collapsed ? 'justify-center px-0 py-3' : 'space-x-3.5 px-4 py-3'} rounded-2xl text-sm font-extrabold transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/30'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  }`
+                }
+              >
+                {item.icon}
+                {!collapsed && <span className="whitespace-nowrap overflow-hidden">{item.name}</span>}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+
+        {/* Bottom Section: Logout Button + Teacher Card */}
+        <div className={`space-y-4 pt-6 border-t border-slate-800/80 w-full ${collapsed ? 'flex flex-col items-center' : ''}`}>
+          
+          {/* Logout Trigger Button */}
+          <button
+            type="button"
+            onClick={() => setShowLogoutModal(true)}
+            title={collapsed ? 'Logout' : ''}
+            className={`w-full flex items-center ${collapsed ? 'justify-center px-0 py-3' : 'space-x-3.5 px-4 py-3'} rounded-2xl text-sm font-extrabold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all cursor-pointer`}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            {!collapsed && <span className="whitespace-nowrap overflow-hidden">Logout</span>}
+          </button>
+
+          {/* Teacher Card Below Logout (Hidden when collapsed) */}
+          {!collapsed && (
+            <div className="bg-slate-800/70 border border-slate-700/60 p-3.5 rounded-2xl flex items-center space-x-3.5 shadow-sm w-full overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+                alt="Mr. James Doe"
+                className="w-11 h-11 rounded-full object-cover border-2 border-sky-400 shadow-sm flex-shrink-0"
+              />
+              <div className="overflow-hidden">
+                <h4 className="text-sm font-extrabold text-white truncate">
+                  Mr. James Doe
+                </h4>
+                <p className="text-[10px] font-bold text-sky-400 uppercase tracking-wider truncate">
+                  SENIOR EDUCATOR
+                </p>
+              </div>
+            </div>
+          )}
+
         </div>
 
       </div>
-
-    </div>
-  );
+    );
+  };
 
   return (
     <>
-      {/* Desktop Sidebar (Fixed Left Nav) */}
-      <aside className="hidden lg:flex flex-col w-64 bg-[#1B253B] h-screen fixed left-0 top-0 z-30 border-r border-slate-800">
+      {/* Desktop Sidebar (Fixed Left Nav with dynamic width transition) */}
+      <aside className={`hidden lg:flex flex-col ${isCollapsed ? 'w-20' : 'w-64'} bg-[#1B253B] h-screen fixed left-0 top-0 z-30 border-r border-slate-800 transition-all duration-300`}>
         <SidebarContent />
       </aside>
 
-      {/* Mobile Drawer Header */}
-      <div className="lg:hidden bg-[#1B253B] text-white p-4 flex items-center justify-between sticky top-0 z-40 border-b border-slate-800">
+      {/* Mobile Header Bar matching Parent Portal Style */}
+      <div className="lg:hidden bg-white text-brand-navy p-4 flex items-center justify-between sticky top-0 z-40 border-b border-slate-100 shadow-sm">
         <div className="flex items-center space-x-3">
           <img
             src={schoolLogo}
             alt="Logo"
             className="w-8 h-8 object-contain"
           />
-          <span className="font-extrabold text-sm tracking-tight">HIGHFLYER STAFF</span>
+          <span className="font-extrabold text-sm tracking-tight text-brand-navy">Highflyer Staff Portal</span>
         </div>
 
         <button
           type="button"
           onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="p-2 text-slate-300 hover:text-white focus:outline-none"
+          className="p-2 text-slate-600 hover:text-brand-navy focus:outline-none"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d={isMobileOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
@@ -212,15 +238,16 @@ const StaffSidebar = () => {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-              className="relative w-64 bg-[#1B253B] h-full z-10"
+              className="relative w-64 bg-[#1B253B] h-full z-10 shadow-2xl"
             >
-              <SidebarContent />
+              {/* Mobile drawer forced fully expanded to prevent view contractions */}
+              <SidebarContent forceExpanded={true} />
             </motion.aside>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Logout Confirmation Modal */}
+      {/* Logout Confirmation Modal with Staff-specific inquisition */}
       <AnimatePresence>
         {showLogoutModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -245,9 +272,9 @@ const StaffSidebar = () => {
               </div>
 
               <div className="space-y-1">
-                <h3 className="text-lg font-extrabold text-slate-800">Confirm Logout</h3>
+                <h3 className="text-lg font-extrabold text-slate-800">End Staff Session?</h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  Are you sure you want to end your current session?
+                  Are you sure you want to log out of the Highflyer Staff Portal?
                 </p>
               </div>
 
@@ -264,7 +291,7 @@ const StaffSidebar = () => {
                   onClick={handleConfirmLogout}
                   className="bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 rounded-2xl text-xs shadow-md transition-all cursor-pointer"
                 >
-                  Logout
+                  Log Out
                 </button>
               </div>
             </motion.div>
