@@ -8,6 +8,8 @@ import StaffSidebar from '../Components/StaffSidebar';
 import StaffDashboard from '../Pages/StaffDashboard';
 import Attendance from '../Pages/Attendance';
 import Gradebook from '../Pages/Gradebook';
+import ManageAssignments from '../Pages/ManageAssignments';
+import ClassRoster from '../Pages/ClassRoster'
 
 // Import Staff Login View
 import LoginEffect from '../../Landing Page/Log/LoginEffect';
@@ -45,8 +47,8 @@ const OperatorStaff = () => {
         {/* Placeholder routes for upcoming staff pages */}
         <Route path="attendance" element={<Attendance />} />
         <Route path="gradebook" element={<Gradebook />} />
-        <Route path="assignments" element={<div className="p-8 font-extrabold text-brand-navy">Manage Assignments Page</div>} />
-        <Route path="roster" element={<div className="p-8 font-extrabold text-brand-navy">Class Roster Page</div>} />
+        <Route path="assignments" element={<ManageAssignments />} />
+        <Route path="roster" element={<ClassRoster />} />
         <Route path="feed" element={<div className="p-8 font-extrabold text-brand-navy">Staff Feed Page</div>} />
         <Route path="settings" element={<div className="p-8 font-extrabold text-brand-navy">Staff Settings Page</div>} />
       </Route>

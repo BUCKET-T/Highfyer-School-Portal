@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
@@ -86,12 +86,48 @@ const todaySchedule = [
   },
 ];
 
+const assignedClasses = [
+  'Grade 1 Gold',
+  'Grade 2 Blue',
+  'Grade 3 Emerald',
+];
+
 const StaffDashboard = () => {
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [selectedClass, setSelectedClass] = useState('Grade 1 Gold');
+  const [showClassDropdown, setShowClassDropdown] = useState(false);
+  const [showRedirectNotice, setShowRedirectNotice] = useState(false);
+
+  // Close dropdown on outside click
+  const dropdownRef = useRef(null);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowClassDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Handle Class Toggle with Redirection back to Grade 1 Gold
+  const handleClassSelect = (className) => {
+    setShowClassDropdown(false);
+    if (className !== 'Grade 1 Gold') {
+      setSelectedClass(className);
+      setShowRedirectNotice(true);
+      setTimeout(() => {
+        setSelectedClass('Grade 1 Gold');
+        setShowRedirectNotice(false);
+      }, 1800);
+    } else {
+      setSelectedClass('Grade 1 Gold');
+    }
+  };
 
   return (
-    <div className="w-full min-h-screen bg-slate-50/60 p-4 sm:p-6 lg:p-8">
+    <div className="w-full min-h-screen bg-slate-50/60 p-4 sm:p-6 lg:p-8" ref={dropdownRef}>
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         
         {/* Top Welcome Header Bar */}
@@ -101,23 +137,70 @@ const StaffDashboard = () => {
               Morning, Mr. James!
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 font-medium pt-1">
-              Here's what's happening in <span className="font-extrabold text-brand-blue">Grade 1 Gold</span> today.
+              Here's what's happening in <span className="font-extrabold text-brand-blue">{selectedClass}</span> today.
             </p>
           </div>
 
-          {/* Header Action Tools */}
-          <div className="flex items-center flex-wrap gap-2.5 self-start md:self-auto">
+          {/* Class Account Switcher & Action Tools */}
+          <div className="flex items-center flex-wrap gap-3">
             
+            {/* Custom Web UI Class Switcher Dropdown */}
+            <div className="relative w-48 sm:w-56">
+              <button
+                type="button"
+                onClick={() => setShowClassDropdown(!showClassDropdown)}
+                className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-2xl px-4 py-3 text-xs font-extrabold text-brand-navy flex items-center justify-between transition-all cursor-pointer shadow-sm"
+              >
+                <div className="flex items-center space-x-2">
+                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
+                  <span>{selectedClass}</span>
+                </div>
+                <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${showClassDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              <AnimatePresence>
+                {showClassDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-2 w-full bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-40"
+                  >
+                    <div className="px-3.5 py-1 text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                      Switch Assigned Class
+                    </div>
+                    {assignedClasses.map((cls) => (
+                      <button
+                        key={cls}
+                        type="button"
+                        onClick={() => handleClassSelect(cls)}
+                        className={`w-full text-left px-4 py-2.5 text-xs font-extrabold transition-colors cursor-pointer ${
+                          selectedClass === cls
+                            ? 'bg-sky-50 text-sky-600'
+                            : 'text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {cls} {cls !== 'Grade 1 Gold' && <span className="text-[10px] text-amber-500 font-bold ml-1">(Demo Sample Only)</span>}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             {/* New Assignment Primary Button */}
             <button
               type="button"
               onClick={() => navigate('/staff/assignments')}
-              className="bg-[#1B253B] hover:bg-slate-800 text-white font-extrabold px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm flex items-center space-x-2 transition-all shadow-md cursor-pointer flex-shrink-0"
+              className="bg-[#1B253B] hover:bg-slate-800 text-white font-extrabold px-4 sm:px-5 py-3 rounded-2xl text-xs sm:text-sm flex items-center space-x-2 transition-all shadow-md cursor-pointer flex-shrink-0"
             >
               <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              <span>New Assignment</span>
+              <span>New Assign</span>
             </button>
 
             {/* Notification Bell Icon */}
@@ -179,6 +262,23 @@ const StaffDashboard = () => {
 
           </div>
         </div>
+
+        {/* Redirect Notice Banner when clicking non-default classes */}
+        <AnimatePresence>
+          {showRedirectNotice && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl text-xs font-bold flex items-center space-x-3 shadow-sm"
+            >
+              <svg className="w-5 h-5 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>Demo record sets are currently initialized for <strong>Grade 1 Gold</strong>. Redirecting you back to your active account dataset...</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Metric Stat Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
