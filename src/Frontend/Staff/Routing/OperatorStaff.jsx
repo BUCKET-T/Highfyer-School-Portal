@@ -9,7 +9,9 @@ import StaffDashboard from '../Pages/StaffDashboard';
 import Attendance from '../Pages/Attendance';
 import Gradebook from '../Pages/Gradebook';
 import ManageAssignments from '../Pages/ManageAssignments';
-import ClassRoster from '../Pages/ClassRoster'
+import ClassRoster from '../Pages/ClassRoster';
+import StaffFeed from '../Pages/StaffFeed';
+import StaffSettings from '../Pages/StaffSettings'
 
 // Import Staff Login View
 import LoginEffect from '../../Landing Page/Log/LoginEffect';
@@ -49,8 +51,8 @@ const OperatorStaff = () => {
         <Route path="gradebook" element={<Gradebook />} />
         <Route path="assignments" element={<ManageAssignments />} />
         <Route path="roster" element={<ClassRoster />} />
-        <Route path="feed" element={<div className="p-8 font-extrabold text-brand-navy">Staff Feed Page</div>} />
-        <Route path="settings" element={<div className="p-8 font-extrabold text-brand-navy">Staff Settings Page</div>} />
+        <Route path="feed" element={<StaffFeed />} />
+        <Route path="settings" element={<StaffSettings />} />
       </Route>
 
       {/* Fallback for unmapped staff paths */}

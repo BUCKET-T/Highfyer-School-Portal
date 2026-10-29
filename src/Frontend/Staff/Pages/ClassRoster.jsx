@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Initial 5 Pupil Profiles Data with diverse medical categories matching wireframe
+// Initial 5 Pupil Profiles Data matching wireframe
 const initialPupils = [
   {
     id: 1,
@@ -199,18 +199,16 @@ const ClassRoster = () => {
           {sortedPupils.map((pupil) => (
             <div
               key={pupil.id}
-              className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-6 transition-all hover:border-slate-200"
+              className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100 flex flex-col xl:flex-row xl:items-center justify-between gap-6 transition-all hover:border-slate-200"
             >
               
               {/* Left: Avatar & Name */}
-              <div className="flex items-center space-x-5 flex-shrink-0">
-                <div className="relative">
-                  <img
-                    src={pupil.avatar}
-                    alt={pupil.name}
-                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-sky-100 shadow-inner"
-                  />
-                </div>
+              <div className="flex items-center space-x-5 flex-shrink-0 xl:w-64">
+                <img
+                  src={pupil.avatar}
+                  alt={pupil.name}
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-sky-100 shadow-inner flex-shrink-0"
+                />
                 <div className="space-y-1">
                   <h3 className="text-lg sm:text-xl font-black text-brand-navy">
                     {pupil.name}
@@ -251,8 +249,8 @@ const ClassRoster = () => {
                 </div>
               </div>
 
-              {/* Middle: Contact Info Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 lg:px-6">
+              {/* Middle: Contact Info Grid (Matches Wireframe 2-Column layout) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 flex-1 xl:px-4">
                 
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">PARENT/GUARDIAN</p>
@@ -262,42 +260,42 @@ const ClassRoster = () => {
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">CONTACT PHONE</p>
                   <p className="text-xs sm:text-sm font-extrabold text-brand-navy flex items-center space-x-1.5">
-                    <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                    <svg className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                     <span>{pupil.contactPhone}</span>
                   </p>
                 </div>
 
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">CONTACT EMAIL</p>
-                  <p className="text-xs sm:text-sm font-semibold text-slate-600 truncate">{pupil.contactEmail}</p>
+                  <p className="text-xs sm:text-sm font-bold text-slate-700">{pupil.contactEmail}</p>
                 </div>
 
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">HOME ADDRESS</p>
-                  <p className="text-xs sm:text-sm font-semibold text-slate-600">{pupil.homeAddress}</p>
+                  <p className="text-xs sm:text-sm font-bold text-slate-700">{pupil.homeAddress}</p>
                 </div>
 
               </div>
 
               {/* Right: Emergency & Medical Notes Boxes */}
-              <div className="flex flex-col sm:flex-row lg:flex-col gap-3 flex-shrink-0 lg:w-72">
+              <div className="flex flex-col sm:flex-row xl:flex-col gap-3 flex-shrink-0 xl:w-72">
                 
                 {/* Emergency Box */}
-                <div className="bg-rose-50/70 border border-rose-100 rounded-2xl p-3 space-y-1">
-                  <p className="text-[9px] font-black text-rose-500 uppercase tracking-wider flex items-center space-x-1">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <div className="bg-rose-50/70 border border-rose-100 rounded-2xl p-3.5 space-y-1 flex-1">
+                  <p className="text-[10px] font-black text-rose-500 uppercase tracking-wider flex items-center space-x-1">
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                     <span>EMERGENCY</span>
                   </p>
-                  <p className="text-[11px] font-bold text-slate-700 truncate">{pupil.emergencyContact}</p>
+                  <p className="text-xs font-bold text-slate-800">{pupil.emergencyContact}</p>
                 </div>
 
                 {/* Medical Notes Box */}
-                <div className="bg-sky-50/70 border border-sky-100 rounded-2xl p-3 space-y-1">
-                  <p className="text-[9px] font-black text-sky-600 uppercase tracking-wider flex items-center space-x-1">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                <div className="bg-sky-50/70 border border-sky-100 rounded-2xl p-3.5 space-y-1 flex-1">
+                  <p className="text-[10px] font-black text-sky-600 uppercase tracking-wider flex items-center space-x-1">
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
                     <span>MEDICAL NOTES</span>
                   </p>
-                  <p className="text-[11px] font-extrabold text-brand-navy truncate">{pupil.medicalNotes}</p>
+                  <p className="text-xs font-black text-brand-navy">{pupil.medicalNotes}</p>
                 </div>
 
               </div>

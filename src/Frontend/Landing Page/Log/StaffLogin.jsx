@@ -115,7 +115,7 @@ const StaffLogin = () => {
               disabled={isLoading}
               whileHover={{ scale: isLoading ? 1 : 1.01 }}
               whileTap={{ scale: isLoading ? 1 : 0.98 }}
-              className="w-full bg-brand-coral hover:bg-orange-600 text-white font-bold py-3.5 rounded-xl shadow-button hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 mt-4 cursor-pointer disabled:opacity-80 disabled:cursor-not-allowed"
+              className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-3.5 rounded-xl shadow-button hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 mt-4 cursor-pointer disabled:opacity-80 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <Spinner size="sm" color="white" />

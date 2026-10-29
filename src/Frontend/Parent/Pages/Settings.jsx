@@ -214,7 +214,7 @@ const Settings = () => {
                   <div className="space-y-1 text-center sm:text-left">
                     <h3 className="text-sm font-extrabold text-brand-navy">Chidi Okoro</h3>
                     <p className="text-xs font-semibold text-slate-400">Grade 1 Gold pupil</p>
-                    <p className="text-[11px] text-slate-400 font-medium pt-1">Click the camera icon to upload a custom image (PNG, JPG, WEBP max 300kb).</p>
+                    <p className="text-[11px] text-slate-400 font-medium pt-1">Click the camera icon to upload a custom image (PNG, JPG, WEBP max 30kb).</p>
                   </div>
                 </div>
               </div>

@@ -274,7 +274,7 @@ const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
               <div className="space-y-1">
                 <h3 className="text-lg font-extrabold text-slate-800">End Staff Session?</h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  Are you sure you want to log out of the Highflyer Staff Portal?
+                  Are you sure you want to log out of your Staff portal session? You will need to sign in again to access ward details.
                 </p>
               </div>
 
