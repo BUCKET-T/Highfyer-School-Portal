@@ -10,6 +10,8 @@ import AdminSidebar from '../Components/AdminSidebar';
 // Import Admin Dashboard Page
 import AdminDashboard from '../Pages/AdminDashboard';
 import UserManagement from '../Pages/UserManagement';
+import AcademicApprovals from '../Pages/AcademicApprovals';
+import SchoolBroadcasts from '../Pages/SchoolBroadcasts';
 
 const OperatorAdmin = () => {
   return (
@@ -38,25 +40,11 @@ const OperatorAdmin = () => {
                 <Route path="users" element={<UserManagement />} />
 
 
-                {/* Academic Approvals Placeholder */}
-                <Route
-                  path="approvals"
-                  element={
-                    <div className="p-8 text-center text-xl font-bold text-brand-navy">
-                      Academic Approvals & Gradebook Review
-                    </div>
-                  }
-                />
+                <Route path="approvals" element={<AcademicApprovals />} />
+
 
                 {/* School Broadcasts Placeholder */}
-                <Route
-                  path="broadcasts"
-                  element={
-                    <div className="p-8 text-center text-xl font-bold text-brand-navy">
-                      School Broadcasts & Directives Hub
-                    </div>
-                  }
-                />
+                <Route path="broadcasts" element={<SchoolBroadcasts />} />
 
                 {/* System Settings Placeholder */}
                 <Route
