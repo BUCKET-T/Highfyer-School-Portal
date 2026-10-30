@@ -32,7 +32,7 @@ const StaffLogin = () => {
         <div>
           <div className="space-y-1 mb-8">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-brand-navy tracking-tight">
-              Staff / Educator Login
+              StaffLogin
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium">
               Enter your educator credentials to manage classes

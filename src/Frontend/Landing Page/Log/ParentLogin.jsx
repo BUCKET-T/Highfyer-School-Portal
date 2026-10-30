@@ -90,7 +90,7 @@ const ParentLogin = () => {
         <div>
           <div className="space-y-1 mb-8">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-brand-navy tracking-tight">
-              Parent / Guardian Login
+              Parent Login
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium">
               Please enter your credentials to continue
