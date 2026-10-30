@@ -91,7 +91,7 @@ const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
     const collapsed = isCollapsed && !forceExpanded;
 
     return (
-      <div className={`flex flex-col h-full justify-between ${collapsed ? 'p-3 items-center' : 'p-5'} text-slate-300 transition-all duration-300`}>
+      <div className={`flex flex-col h-full justify-between ${collapsed ? 'p-3 items-center' : 'p-5'} text-slate-300 overflow-x-hidden`}>
         
         {/* Top Branding Header with School Logo & Collapse Toggle */}
         <div className="space-y-6 w-full">
@@ -119,7 +119,7 @@ const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
               <button
                 type="button"
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800/80 transition-all cursor-pointer focus:outline-none"
+                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800/80 transition-all cursor-pointer focus:outline-none flex-shrink-0"
                 title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -195,10 +195,15 @@ const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
 
   return (
     <>
-      {/* Desktop Sidebar (Fixed Left Nav with dynamic width transition) */}
-      <aside className={`hidden lg:flex flex-col ${isCollapsed ? 'w-20' : 'w-64'} bg-[#1B253B] h-screen fixed left-0 top-0 z-30 border-r border-slate-800 transition-all duration-300`}>
+      {/* Desktop Sidebar (Fixed Left Nav with Framer Motion Smooth Width Animation) */}
+      <motion.aside
+        initial={false}
+        animate={{ width: isCollapsed ? '80px' : '256px' }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className="hidden lg:flex flex-col bg-[#1B253B] h-screen fixed left-0 top-0 z-30 border-r border-slate-800 shadow-xl flex-shrink-0"
+      >
         <SidebarContent />
-      </aside>
+      </motion.aside>
 
       {/* Mobile Header Bar matching Parent Portal Style */}
       <div className="lg:hidden bg-white text-brand-navy p-4 flex items-center justify-between sticky top-0 z-40 border-b border-slate-100 shadow-sm">

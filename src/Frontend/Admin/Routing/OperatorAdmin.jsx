@@ -12,6 +12,7 @@ import AdminDashboard from '../Pages/AdminDashboard';
 import UserManagement from '../Pages/UserManagement';
 import AcademicApprovals from '../Pages/AcademicApprovals';
 import SchoolBroadcasts from '../Pages/SchoolBroadcasts';
+import AdminSettings from '../Pages/AdminSettings';
 
 const OperatorAdmin = () => {
   return (
@@ -48,14 +49,7 @@ const OperatorAdmin = () => {
                 <Route path="broadcasts" element={<SchoolBroadcasts />} />
 
                 {/* System Settings */}
-                <Route
-                  path="settings"
-                  element={
-                    <div className="p-8 text-center text-xl font-bold text-brand-navy">
-                      Calendar Configuration & System Settings
-                    </div>
-                  }
-                />
+                <Route path="settings" element={<AdminSettings />} />
 
                 {/* Internal Fallback Redirect */}
                 <Route path="*" element={<Navigate to="dashboard" replace />} />
