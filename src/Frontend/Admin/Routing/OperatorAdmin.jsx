@@ -26,27 +26,28 @@ const OperatorAdmin = () => {
       <Route
         path="*"
         element={
-          <div className="flex flex-col lg:flex-row min-h-screen bg-slate-50/60 font-sans antialiased text-slate-800 overflow-x-hidden">
-            {/* Left Navigation Sidebar / Mobile Top Header */}
-            <AdminSidebar />
+          <div className="flex flex-col lg:flex-row h-screen w-screen bg-slate-50/60 font-sans antialiased text-slate-800 overflow-hidden">
+            {/* Left Navigation Sidebar / Mobile Top Header (Fixed/Contained width) */}
+            <div className="flex-shrink-0 z-20">
+              <AdminSidebar />
+            </div>
 
-            {/* Main Dynamic View Area */}
-            <main className="flex-1 min-w-0 overflow-y-auto">
+            {/* Main Dynamic View Area (Scrollable Independent Content) */}
+            <main className="flex-1 min-w-0 h-full overflow-y-auto">
               <Routes>
                 {/* Admin Dashboard */}
                 <Route path="dashboard" element={<AdminDashboard />} />
 
-                {/* User Management Placeholder */}
+                {/* User Management */}
                 <Route path="users" element={<UserManagement />} />
 
-
+                {/* Academic Approvals */}
                 <Route path="approvals" element={<AcademicApprovals />} />
 
-
-                {/* School Broadcasts Placeholder */}
+                {/* School Broadcasts */}
                 <Route path="broadcasts" element={<SchoolBroadcasts />} />
 
-                {/* System Settings Placeholder */}
+                {/* System Settings */}
                 <Route
                   path="settings"
                   element={

@@ -32,16 +32,18 @@ const AdminSidebar = () => {
   ];
 
   const sidebarContent = (isMobile = false) => (
-    <div className="flex flex-col justify-between h-full p-4 sm:p-5 select-none">
+    <div className="flex flex-col justify-between h-full p-4 sm:p-5 select-none overflow-x-hidden">
       {/* Top Section: Branding & Toggle */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        
+        {/* Header Branding */}
+        <div className={`flex items-center ${isCollapsed && !isMobile ? 'flex-col space-y-4' : 'justify-between'}`}>
           {(!isCollapsed || isMobile) ? (
             <div className="flex items-center space-x-3 overflow-hidden">
               <img
                 src={schoolLogo}
                 alt="HighFlyer Logo"
-                className="w-10 h-10 object-contain bg-white/10 p-1 rounded-xl border border-white/15"
+                className="w-10 h-10 object-contain  "
               />
               <div className="whitespace-nowrap">
                 <h1 className="text-sm font-black tracking-tight text-white leading-none">
@@ -53,25 +55,27 @@ const AdminSidebar = () => {
               </div>
             </div>
           ) : (
-            <div className="mx-auto">
+            <div className="flex flex-col items-center space-y-3 w-full">
               <img
                 src={schoolLogo}
                 alt="Logo"
-                className="w-10 h-10 object-contain bg-white/10 p-1 rounded-xl border border-white/15"
+                className="w-10 h-10 object-contain bg-white/10 p-1 rounded-xl border border-white/15 flex-shrink-0"
               />
             </div>
           )}
 
+          {/* Desktop Collapse / Expand Toggle Button */}
           {!isMobile && (
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-2 rounded-xl bg-slate-800/60 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-2 rounded-xl bg-slate-800/60 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer flex-shrink-0"
               title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
             >
-              {isCollapsed ? <Menu size={18} /> : <X size={18} />}
+              <Menu size={18} />
             </button>
           )}
 
+          {/* Mobile Close Drawer Button */}
           {isMobile && (
             <button
               onClick={() => setIsMobileOpen(false)}
@@ -92,12 +96,15 @@ const AdminSidebar = () => {
                 to={item.path}
                 onClick={() => isMobile && setIsMobileOpen(false)}
                 className={({ isActive }) =>
-                  `relative flex items-center px-3.5 py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all group ${
+                  `relative flex items-center ${
+                    isCollapsed && !isMobile ? 'justify-center px-0 py-3.5' : 'px-3.5 py-3'
+                  } rounded-2xl text-xs sm:text-sm font-bold transition-all group ${
                     isActive
                       ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                   }`
                 }
+                title={isCollapsed && !isMobile ? item.name : undefined}
               >
                 <div className="flex items-center justify-center w-6 h-6 flex-shrink-0">
                   <IconComponent size={20} />
@@ -111,7 +118,7 @@ const AdminSidebar = () => {
                 {item.hasNotification && (
                   <span
                     className={`absolute ${
-                      isCollapsed && !isMobile ? 'top-2 right-2' : 'right-4'
+                      isCollapsed && !isMobile ? 'top-2 right-3' : 'right-4'
                     } w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-[#121B2D] animate-pulse`}
                     title="New pending items"
                   />
@@ -122,18 +129,21 @@ const AdminSidebar = () => {
         </nav>
       </div>
 
-      {/* Footer / System Settings */}
+      {/* Footer / System Settings & Profile */}
       <div className="space-y-4 pt-4 border-t border-slate-800/80">
         <NavLink
           to="settings"
           onClick={() => isMobile && setIsMobileOpen(false)}
           className={({ isActive }) =>
-            `flex items-center px-3.5 py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all ${
+            `flex items-center ${
+              isCollapsed && !isMobile ? 'justify-center px-0 py-3.5' : 'px-3.5 py-3'
+            } rounded-2xl text-xs sm:text-sm font-bold transition-all ${
               isActive
                 ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`
           }
+          title={isCollapsed && !isMobile ? 'System Settings' : undefined}
         >
           <div className="flex items-center justify-center w-6 h-6 flex-shrink-0">
             <Settings size={20} />
@@ -163,13 +173,16 @@ const AdminSidebar = () => {
               </button>
             </div>
           ) : (
-            <div className="flex justify-center pb-2">
+            <div className="flex flex-col items-center space-y-3 pb-2">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-xs shadow" title="Admin Director">
+                AD
+              </div>
               <button
                 onClick={handleLogout}
-                className="p-3 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-2xl transition-colors cursor-pointer"
+                className="p-2.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-xl transition-colors cursor-pointer"
                 title="Logout"
               >
-                <LogOut size={20} />
+                <LogOut size={18} />
               </button>
             </div>
           )}
@@ -180,12 +193,12 @@ const AdminSidebar = () => {
 
   return (
     <>
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar with Smooth Framer Motion Width Transition */}
       <motion.aside
         initial={false}
         animate={{ width: isCollapsed ? '88px' : '280px' }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="hidden lg:flex flex-col bg-[#121B2D] text-slate-300 min-h-screen border-r border-slate-800/80 shadow-xl z-20 flex-shrink-0"
+        className="hidden lg:flex flex-col bg-[#121B2D] text-slate-300 h-screen sticky top-0 border-r border-slate-800/80 shadow-xl z-20 flex-shrink-0"
       >
         {sidebarContent(false)}
       </motion.aside>
@@ -196,7 +209,7 @@ const AdminSidebar = () => {
           <img
             src={schoolLogo}
             alt="Logo"
-            className="w-9 h-9 object-contain bg-white/10 p-1 rounded-xl border border-white/15"
+            className="w-9 h-9 object-contain "
           />
           <div>
             <h2 className="text-xs font-black tracking-tight leading-none text-white">Highflyer</h2>
