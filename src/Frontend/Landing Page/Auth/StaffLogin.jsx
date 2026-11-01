@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Import Custom Backend Logic Hook
+import { useStaffLoginLogic } from '../../../Backend/Auth/StaffLoginLogic';
 
 // Import Shared Spinner Loader
 import Spinner from '../../Shared/loaders/Spinner';
@@ -9,30 +12,29 @@ import Spinner from '../../Shared/loaders/Spinner';
 import schoolLogo from '../../../assets/logo.png';
 
 const StaffLogin = () => {
-  const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Simulated network/auth delay before routing to staff dashboard
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate('/staff/dashboard');
-    }, 1200);
-  };
+  const {
+    staffIdOrEmail,
+    setStaffIdOrEmail,
+    password,
+    setPassword,
+    showPassword,
+    setShowPassword,
+    rememberMe,
+    setRememberMe,
+    isLoading,
+    toast,
+    handleSubmit,
+  } = useStaffLoginLogic();
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 w-full h-full min-h-[580px] bg-white">
+    <div className="grid grid-cols-1 md:grid-cols-12 w-full h-full min-h-[580px] bg-white relative">
       
       {/* Left Column: Staff Form */}
       <div className="md:col-span-7 bg-white p-8 sm:p-12 flex flex-col justify-between order-2 md:order-1">
         <div>
-          <div className="space-y-1 mb-8">
+          <div className="space-y-1 mb-6">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-brand-navy tracking-tight">
-              StaffLogin
+              Staff Login
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium">
               Enter your educator credentials to manage classes
@@ -53,6 +55,8 @@ const StaffLogin = () => {
                 <input
                   type="text"
                   required
+                  value={staffIdOrEmail}
+                  onChange={(e) => setStaffIdOrEmail(e.target.value)}
                   placeholder="Enter Staff ID or Email"
                   className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-coral focus:bg-white transition-all"
                 />
@@ -77,13 +81,15 @@ const StaffLogin = () => {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-coral focus:bg-white transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                     {showPassword ? (
@@ -103,7 +109,9 @@ const StaffLogin = () => {
               <input
                 type="checkbox"
                 id="rememberMeStaff"
-                className="w-4 h-4 rounded border-slate-300 text-brand-coral focus:ring-brand-coral"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-brand-coral focus:ring-brand-coral cursor-pointer"
               />
               <label htmlFor="rememberMeStaff" className="text-xs font-semibold text-slate-600 select-none cursor-pointer">
                 Remember me on this workstation
@@ -143,7 +151,7 @@ const StaffLogin = () => {
 
         <div className="relative z-10 space-y-6">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12  flex items-center justify-center ">
+            <div className="w-12 h-12 flex items-center justify-center">
               <img src={schoolLogo} alt="HighFlyer Logo" className="w-full h-full object-contain" />
             </div>
             <div className="flex flex-col">
@@ -185,6 +193,32 @@ const StaffLogin = () => {
           © {new Date().getFullYear()} HighFlyer Kiddies Academy
         </div>
       </div>
+
+      {/* Bottom Right Floating Toast Notification (Success & Error) */}
+      <AnimatePresence>
+        {toast.visible && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className={`fixed bottom-6 right-6 z-50 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center space-x-3 border max-w-sm ${
+              toast.type === 'success' 
+                ? 'bg-emerald-600 border-emerald-500' 
+                : 'bg-rose-600 border-rose-500'
+            }`}
+          >
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 text-white font-bold text-xs">
+              {toast.type === 'success' ? '✓' : '✕'}
+            </div>
+            <div>
+              <h4 className="text-xs font-black uppercase tracking-wider">
+                {toast.type === 'success' ? 'Success' : 'Access Denied'}
+              </h4>
+              <p className="text-xs font-medium text-slate-100">{toast.message}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

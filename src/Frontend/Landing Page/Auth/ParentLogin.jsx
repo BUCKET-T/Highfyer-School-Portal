@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Import Custom Backend Logic Hook
 import { useParentLoginLogic } from '../../../Backend/Auth/ParentLoginLogic';
 
 // Import Shared Spinner Loader
-import Spinner from '../../Shared/loaders/Spinner'
+import Spinner from '../../Shared/loaders/Spinner';
 
 // Import logo asset
 import schoolLogo from '../../../assets/logo.png';
@@ -22,12 +22,12 @@ const ParentLogin = () => {
     rememberMe,
     setRememberMe,
     isLoading,
-    errorMsg,
+    toast,
     handleSubmit,
   } = useParentLoginLogic();
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 w-full h-full min-h-[580px] bg-white">
+    <div className="grid grid-cols-1 md:grid-cols-12 w-full h-full min-h-[580px] bg-white relative">
       
       {/* Left Column: Dark Navy Branding Panel */}
       <div className="md:col-span-5 bg-brand-navy p-8 sm:p-10 text-white flex flex-col justify-between relative overflow-hidden">
@@ -98,12 +98,6 @@ const ParentLogin = () => {
               Please enter your credentials to continue
             </p>
           </div>
-
-          {errorMsg && (
-            <div className="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs font-bold text-rose-600">
-              {errorMsg}
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
@@ -207,6 +201,32 @@ const ParentLogin = () => {
           </p>
         </div>
       </div>
+
+      {/* Bottom Right Floating Toast Notification (Success & Error) */}
+      <AnimatePresence>
+        {toast.visible && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className={`fixed bottom-6 right-6 z-50 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center space-x-3 border max-w-sm ${
+              toast.type === 'success' 
+                ? 'bg-emerald-600 border-emerald-500' 
+                : 'bg-rose-600 border-rose-500'
+            }`}
+          >
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 text-white font-bold text-xs">
+              {toast.type === 'success' ? '✓' : '✕'}
+            </div>
+            <div>
+              <h4 className="text-xs font-black uppercase tracking-wider">
+                {toast.type === 'success' ? 'Success' : 'Access Denied'}
+              </h4>
+              <p className="text-xs font-medium text-slate-100">{toast.message}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );
