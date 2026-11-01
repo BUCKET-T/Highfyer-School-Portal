@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Import Custom Backend Logic Hook
+import { useAdminLoginLogic } from '../../../Backend/Auth/AdminLoginLogic';
 
 // Import Shared Spinner Loader
 import Spinner from '../../Shared/loaders/Spinner';
@@ -10,25 +13,22 @@ import schoolLogo from '../../../assets/logo.png';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const [adminEmail, setAdminEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate login verification delay
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate('/admin/dashboard');
-    }, 1200);
-  };
+  const {
+    adminEmail,
+    setAdminEmail,
+    password,
+    setPassword,
+    showPassword,
+    setShowPassword,
+    rememberMe,
+    setRememberMe,
+    isLoading,
+    toast,
+    handleLogin,
+  } = useAdminLoginLogic();
 
   return (
-    <div className="w-full min-h-screen bg-slate-100/80 flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans antialiased">
+    <div className="w-full min-h-screen bg-slate-100/80 flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans antialiased relative">
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -68,7 +68,7 @@ const AdminLogin = () => {
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
                     required
-                    placeholder="Enter your Parent ID or Email"
+                    placeholder="Enter your Admin ID or Email"
                     className="w-full bg-sky-50/50 border border-slate-200 focus:border-sky-500 rounded-2xl pl-11 pr-4 py-3.5 text-xs sm:text-sm font-bold text-brand-navy placeholder:text-slate-400 focus:outline-none transition-all shadow-inner"
                   />
                 </div>
@@ -83,7 +83,6 @@ const AdminLogin = () => {
                   <button
                     type="button"
                     onClick={() => navigate('/auth/reset-password')}
-                    
                     className="text-[11px] sm:text-xs font-bold text-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
                   >
                     Forgot Password?
@@ -160,7 +159,7 @@ const AdminLogin = () => {
             <img
               src={schoolLogo}
               alt="HighFlyer Logo"
-              className="w-10 h-10 object-contain "
+              className="w-10 h-10 object-contain"
             />
             <div>
               <h3 className="text-sm font-black tracking-tight text-white leading-none">HighFlyer</h3>
@@ -204,6 +203,33 @@ const AdminLogin = () => {
         </div>
 
       </motion.div>
+
+      {/* Bottom Right Floating Toast Notification (Success & Error) */}
+      <AnimatePresence>
+        {toast.visible && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className={`fixed bottom-6 right-6 z-50 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center space-x-3 border max-w-sm ${
+              toast.type === 'success' 
+                ? 'bg-emerald-600 border-emerald-500' 
+                : 'bg-rose-600 border-rose-500'
+            }`}
+          >
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 text-white font-bold text-xs">
+              {toast.type === 'success' ? '✓' : '✕'}
+            </div>
+            <div>
+              <h4 className="text-xs font-black uppercase tracking-wider">
+                {toast.type === 'success' ? 'Success' : 'Access Denied'}
+              </h4>
+              <p className="text-xs font-medium text-slate-100">{toast.message}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

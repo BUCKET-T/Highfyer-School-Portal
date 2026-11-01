@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ClipboardCheck, 
@@ -12,112 +12,41 @@ import {
   AlertCircle,
   CheckCheck,
   Filter,
-  ChevronDown
+  ChevronDown,
+  Inbox
 } from 'lucide-react';
 
+// Import Custom Backend Logic Hook
+import { useAcademicApprovalLogic } from '../../../Backend/Admin/AcademicApprovalLogic';
+
+// Import Shared Spinner Loader
+import Spinner from '../../Shared/loaders/Spinner';
+
 const AcademicApprovals = () => {
-  const [activeFilter, setActiveFilter] = useState('Pending Review');
-  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSubmission, setSelectedSubmission] = useState(null);
-  const [showResetConfirm, setShowResetConfirm] = useState(null);
-
-  const filterOptions = [
-    'Pending Review',
-    'Approved Reports',
-    'Reset History',
-    'All Submissions'
-  ];
-
-  // Initial Mock Submissions Database matching reference table styling
-  const [submissionsList, setSubmissionsList] = useState([
-    {
-      id: 1,
-      subject: 'Mathematics',
-      className: 'Grade 1',
-      subClass: 'Gold',
-      pupilsCount: 32,
-      teacherName: 'Mr. James Doe',
-      teacherAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-      submissionDate: 'May 14, 2024',
-      averageScore: '84%',
-      status: 'Pending',
-      term: 'Term 1, 2024 Session',
-    },
-    {
-      id: 2,
-      subject: 'Basic Science',
-      className: 'Grade 3',
-      subClass: 'Silver',
-      pupilsCount: 28,
-      teacherName: 'Mrs. Sarah Smith',
-      teacherAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=150',
-      submissionDate: 'May 12, 2024',
-      averageScore: '76%',
-      status: 'Reviewing',
-      term: 'Term 1, 2024 Session',
-    },
-    {
-      id: 3,
-      subject: 'English Language',
-      className: 'Grade 5',
-      subClass: 'Emerald',
-      pupilsCount: 30,
-      teacherName: 'Mr. Kofi Mensah',
-      teacherAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150',
-      submissionDate: 'May 10, 2024',
-      averageScore: '91%',
-      status: 'Approved',
-      term: 'Term 1, 2024 Session',
-    },
-  ]);
-
-  // Handle Approve Action
-  const handleApprove = (id) => {
-    setSubmissionsList(submissionsList.map(sub => {
-      if (sub.id === id) {
-        return { ...sub, status: 'Approved' };
-      }
-      return sub;
-    }));
-    setSelectedSubmission(null);
-  };
-
-  // Handle Bulk Approve Action
-  const handleBulkApprove = () => {
-    setSubmissionsList(submissionsList.map(sub => ({
-      ...sub,
-      status: 'Approved'
-    })));
-  };
-
-  // Handle Reset Score Sheet Action
-  const handleResetScoreSheet = (id) => {
-    setSubmissionsList(submissionsList.map(sub => {
-      if (sub.id === id) {
-        return { ...sub, status: 'Rejected' };
-      }
-      return sub;
-    }));
-    setShowResetConfirm(null);
-    setSelectedSubmission(null);
-  };
-
-  // Filter Logic based on selected filter option
-  const filteredSubmissions = submissionsList.filter(sub => {
-    const matchesSearch = sub.teacherName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          sub.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          sub.subject.toLowerCase().includes(searchQuery.toLowerCase());
-    if (activeFilter === 'Pending Review') return matchesSearch && (sub.status === 'Pending' || sub.status === 'Reviewing');
-    if (activeFilter === 'Approved Reports') return matchesSearch && sub.status === 'Approved';
-    if (activeFilter === 'Reset History') return matchesSearch && (sub.status === 'Rejected' || sub.status === 'Reset / Returned');
-    return matchesSearch; // 'All Submissions'
-  });
-
-  const countPending = submissionsList.filter(s => s.status === 'Pending').length;
-  const countReviewing = submissionsList.filter(s => s.status === 'Reviewing').length;
-  const countApproved = submissionsList.filter(s => s.status === 'Approved').length;
-  const countRejected = submissionsList.filter(s => s.status === 'Rejected' || s.status === 'Reset / Returned').length;
+  const {
+    activeFilter,
+    setActiveFilter,
+    isFilterDropdownOpen,
+    setIsFilterDropdownOpen,
+    searchQuery,
+    setSearchQuery,
+    selectedSubmission,
+    setSelectedSubmission,
+    showResetConfirm,
+    setShowResetConfirm,
+    filterOptions,
+    filteredSubmissions,
+    countPending,
+    countReviewing,
+    countApproved,
+    countRejected,
+    isLoading,
+    showGradingBanner,
+    daysRemaining,
+    handleApprove,
+    handleBulkApprove,
+    handleResetScoreSheet,
+  } = useAcademicApprovalLogic();
 
   return (
     <div className="p-4 sm:p-8 space-y-8 max-w-7xl mx-auto font-sans antialiased text-slate-800">
@@ -141,7 +70,8 @@ const AcademicApprovals = () => {
 
           <button
             onClick={handleBulkApprove}
-            className="bg-[#121B2D] hover:bg-slate-800 text-white font-extrabold px-5 py-3 rounded-2xl text-xs sm:text-sm shadow-lg shadow-slate-900/20 transition-all cursor-pointer flex items-center space-x-2"
+            disabled={countPending === 0 && countReviewing === 0}
+            className="bg-[#121B2D] hover:bg-slate-800 text-white font-extrabold px-5 py-3 rounded-2xl text-xs sm:text-sm shadow-lg shadow-slate-900/20 transition-all cursor-pointer flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <CheckCheck size={16} />
             <span>Bulk Approve</span>
@@ -149,43 +79,45 @@ const AcademicApprovals = () => {
         </div>
       </div>
 
-      {/* Grading Window Warning Banner */}
-      <div className="bg-amber-50/70 border border-amber-200/80 p-5 rounded-3xl flex items-center space-x-4 shadow-sm">
-        <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
-          <AlertCircle size={20} />
+      {/* Conditional Grading Window Warning Banner (Displays ONLY when <= 12 days to term end) */}
+      {showGradingBanner && (
+        <div className="bg-amber-50/70 border border-amber-200/80 p-5 rounded-3xl flex items-center space-x-4 shadow-sm">
+          <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+            <AlertCircle size={20} />
+          </div>
+          <div>
+            <h4 className="text-xs font-black text-amber-900 uppercase tracking-wide">TERM GRADING WINDOW CLOSING SOON</h4>
+            <p className="text-xs font-medium text-amber-700 pt-0.5">
+              The current term grading window closes in {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'}. {countPending} subject assessment reports are awaiting review school-wide.
+            </p>
+          </div>
         </div>
-        <div>
-          <h4 className="text-xs font-black text-amber-900 uppercase tracking-wide">TERM 1 GRADING WINDOW</h4>
-          <p className="text-xs font-medium text-amber-700 pt-0.5">
-            The current grading window closes in 4 days. {countPending} subjects still pending approval school-wide.
-          </p>
-        </div>
-      </div>
+      )}
 
-      {/* High-Level Status Result Cards Grid with Hover Float Animation */}
+      {/* High-Level Status Result Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.2 }} className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col justify-between space-y-3 cursor-pointer">
+        <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col justify-between space-y-3">
           <p className="text-[10px] font-black tracking-wider text-slate-400 uppercase">PENDING</p>
           <h3 className="text-3xl font-black text-sky-500 tracking-tight">{countPending}</h3>
         </motion.div>
 
-        <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.2 }} className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col justify-between space-y-3 cursor-pointer">
+        <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col justify-between space-y-3">
           <p className="text-[10px] font-black tracking-wider text-slate-400 uppercase">REVIEWING</p>
           <h3 className="text-3xl font-black text-amber-500 tracking-tight">{countReviewing}</h3>
         </motion.div>
 
-        <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.2 }} className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col justify-between space-y-3 cursor-pointer">
+        <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col justify-between space-y-3">
           <p className="text-[10px] font-black tracking-wider text-slate-400 uppercase">APPROVED</p>
           <h3 className="text-3xl font-black text-emerald-500 tracking-tight">{countApproved}</h3>
         </motion.div>
 
-        <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.2 }} className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col justify-between space-y-3 cursor-pointer">
+        <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col justify-between space-y-3">
           <p className="text-[10px] font-black tracking-wider text-slate-400 uppercase">REJECTED</p>
           <h3 className="text-3xl font-black text-rose-500 tracking-tight">{countRejected}</h3>
         </motion.div>
       </div>
 
-      {/* Submission Queue Table Card with Web UI Filter Dropdown */}
+      {/* Submission Queue Table Card */}
       <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-6">
         
         {/* Header, Search Bar & Custom Web Filter Dropdown */}
@@ -209,7 +141,7 @@ const AcademicApprovals = () => {
               />
             </div>
 
-            {/* Custom Web UI Filter Button & Dropdown */}
+            {/* Filter Dropdown */}
             <div className="relative">
               <button
                 type="button"
@@ -256,98 +188,114 @@ const AcademicApprovals = () => {
           </div>
         </div>
 
-        {/* Submission Queue Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="text-[10px] font-black text-slate-400 uppercase tracking-wider pb-4">
-                <th className="pb-4 px-2">Subject & Class</th>
-                <th className="pb-4 px-2">Educator</th>
-                <th className="pb-4 px-2">Avg. Score</th>
-                <th className="pb-4 px-2">Status</th>
-                <th className="pb-4 px-2 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredSubmissions.map((sub) => (
-                <motion.tr 
-                  key={sub.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  whileHover={{ backgroundColor: '#F8FAFC' }}
-                  className="transition-colors"
-                >
-                  {/* Subject & Class Column */}
-                  <td className="py-4 px-2">
-                    <div className="space-y-0.5">
-                      <h4 className="text-xs sm:text-sm font-black text-slate-900">{sub.subject}</h4>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                        {sub.className.toUpperCase()} • {sub.subClass.toUpperCase()} • {sub.pupilsCount} PUPILS
-                      </p>
-                    </div>
-                  </td>
-
-                  {/* Educator Column */}
-                  <td className="py-4 px-2">
-                    <div className="flex items-center space-x-3">
-                      <img
-                        src={sub.teacherAvatar}
-                        alt={sub.teacherName}
-                        className="w-9 h-9 rounded-xl object-cover shadow-sm flex-shrink-0"
-                      />
-                      <div className="truncate">
-                        <p className="text-xs font-black text-slate-900 truncate">{sub.teacherName}</p>
-                        <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">
-                          SUBMITTED {sub.submissionDate.toUpperCase()}
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="py-20 flex flex-col items-center justify-center space-y-3">
+            <Spinner size="md" color="brand-blue" />
+            <p className="text-xs font-bold text-slate-400">Loading academic submission queue...</p>
+          </div>
+        ) : filteredSubmissions.length === 0 ? (
+          /* Empty State View */
+          <div className="py-16 text-center space-y-4">
+            <div className="w-16 h-16 bg-slate-50 rounded-3xl text-slate-300 flex items-center justify-center mx-auto border border-slate-100">
+              <Inbox size={32} />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-black text-slate-800">No Gradebook Submissions Found</h4>
+              <p className="text-xs font-medium text-slate-400 max-w-md mx-auto">
+                No academic assessment reports currently match your filter query. Records will automatically show up here as educators submit their term gradebooks.
+              </p>
+            </div>
+          </div>
+        ) : (
+          /* Submission Queue Table */
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-[10px] font-black text-slate-400 uppercase tracking-wider pb-4">
+                  <th className="pb-4 px-2">Subject & Class</th>
+                  <th className="pb-4 px-2">Educator</th>
+                  <th className="pb-4 px-2">Avg. Score</th>
+                  <th className="pb-4 px-2">Status</th>
+                  <th className="pb-4 px-2 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredSubmissions.map((sub) => (
+                  <motion.tr 
+                    key={sub.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    whileHover={{ backgroundColor: '#F8FAFC' }}
+                    className="transition-colors"
+                  >
+                    <td className="py-4 px-2">
+                      <div className="space-y-0.5">
+                        <h4 className="text-xs sm:text-sm font-black text-slate-900">{sub.subject}</h4>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                          {sub.className.toUpperCase()}
                         </p>
                       </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  {/* Avg Score Column */}
-                  <td className="py-4 px-2">
-                    <span className="text-xs font-black text-slate-900">{sub.averageScore}</span>
-                  </td>
+                    <td className="py-4 px-2">
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={sub.teacherAvatar}
+                          alt={sub.teacherName}
+                          className="w-9 h-9 rounded-xl object-cover shadow-sm flex-shrink-0 bg-slate-100"
+                        />
+                        <div className="truncate">
+                          <p className="text-xs font-black text-slate-900 truncate">{sub.teacherName}</p>
+                          <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">
+                            SUBMITTED {sub.submissionDate.toUpperCase()}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
 
-                  {/* Status Column */}
-                  <td className="py-4 px-2">
-                    <span className={`inline-flex items-center px-3.5 py-1 rounded-full text-[10px] font-extrabold ${
-                      sub.status === 'Approved' ? 'bg-emerald-50 text-emerald-600' :
-                      sub.status === 'Pending' ? 'bg-sky-100 text-sky-600' :
-                      sub.status === 'Reviewing' ? 'bg-amber-100 text-amber-700' : 'bg-rose-50 text-rose-600'
-                    }`}>
-                      {sub.status.toUpperCase()}
-                    </span>
-                  </td>
+                    <td className="py-4 px-2">
+                      <span className="text-xs font-black text-slate-900">{sub.averageScore}</span>
+                    </td>
 
-                  {/* Actions Column (Review & Reset Buttons) */}
-                  <td className="py-4 px-2 text-right">
-                    <div className="flex items-center justify-end space-x-2">
-                      <button
-                        onClick={() => setSelectedSubmission(sub)}
-                        className="px-4 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-900 text-xs font-black transition-all cursor-pointer flex items-center space-x-1.5 shadow-sm"
-                      >
-                        <Eye size={14} className="text-sky-500" />
-                        <span>REVIEW</span>
-                      </button>
+                    <td className="py-4 px-2">
+                      <span className={`inline-flex items-center px-3.5 py-1 rounded-full text-[10px] font-extrabold ${
+                        sub.status === 'Approved' ? 'bg-emerald-50 text-emerald-600' :
+                        sub.status === 'Pending' ? 'bg-sky-100 text-sky-600' :
+                        sub.status === 'Reviewing' ? 'bg-amber-100 text-amber-700' : 'bg-rose-50 text-rose-600'
+                      }`}>
+                        {sub.status.toUpperCase()}
+                      </span>
+                    </td>
 
-                      <button
-                        onClick={() => setShowResetConfirm(sub.id)}
-                        className="p-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer shadow-sm"
-                        title="Reset Score Sheet"
-                      >
-                        <RotateCcw size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    <td className="py-4 px-2 text-right">
+                      <div className="flex items-center justify-end space-x-2">
+                        <button
+                          onClick={() => setSelectedSubmission(sub)}
+                          className="px-4 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-900 text-xs font-black transition-all cursor-pointer flex items-center space-x-1.5 shadow-sm"
+                        >
+                          <Eye size={14} className="text-sky-500" />
+                          <span>REVIEW</span>
+                        </button>
+
+                        <button
+                          onClick={() => setShowResetConfirm(sub.id)}
+                          className="p-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer shadow-sm"
+                          title="Reset Score Sheet"
+                        >
+                          <RotateCcw size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Review & Inspection Modal */}
+      {/* Review Modal */}
       <AnimatePresence>
         {selectedSubmission && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -364,7 +312,9 @@ const AcademicApprovals = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-black text-slate-900">{selectedSubmission.subject}</h3>
-                    <p className="text-xs font-bold text-sky-600">{selectedSubmission.className} {selectedSubmission.subClass} • Submitted by {selectedSubmission.teacherName}</p>
+                    <p className="text-xs font-bold text-sky-600">
+                      {selectedSubmission.className} • Submitted by {selectedSubmission.teacherName}
+                    </p>
                   </div>
                 </div>
                 <button
@@ -382,19 +332,8 @@ const AcademicApprovals = () => {
                     <p className="text-xs font-bold text-slate-800 pt-0.5">{selectedSubmission.submissionDate}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Total Enrolled</p>
-                    <p className="text-xs font-bold text-slate-800 pt-0.5">{selectedSubmission.pupilsCount} Pupils</p>
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-2xl space-y-2 border border-slate-100">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-500">Class Average Performance:</span>
-                    <span className="text-emerald-600 font-black">{selectedSubmission.averageScore}</span>
-                  </div>
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-500">Assessment Status:</span>
-                    <span className="text-slate-800">{selectedSubmission.status}</span>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Status</p>
+                    <p className="text-xs font-bold text-slate-800 pt-0.5">{selectedSubmission.status}</p>
                   </div>
                 </div>
 
