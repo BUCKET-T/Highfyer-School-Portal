@@ -1,32 +1,34 @@
-import React, { useState } from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import React, { useState } from "react";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 
 // Import Staff Sidebar Component
-import StaffSidebar from '../Components/StaffSidebar';
+import StaffSidebar from "../Components/StaffSidebar";
 
 // Import Staff Pages
-import StaffDashboard from '../Pages/StaffDashboard';
-import Attendance from '../Pages/Attendance';
-import Gradebook from '../Pages/Gradebook';
-import ManageAssignments from '../Pages/ManageAssignments';
-import ClassRoster from '../Pages/ClassRoster';
-import StaffFeed from '../Pages/StaffFeed';
-import StaffSettings from '../Pages/StaffSettings'
+import StaffDashboard from "../Pages/StaffDashboard";
+import Attendance from "../Pages/Attendance";
+import Gradebook from "../Pages/Gradebook";
+import ManageAssignments from "../Pages/ManageAssignments";
+import ClassRoster from "../Pages/ClassRoster";
+import StaffFeed from "../Pages/StaffFeed";
+import StaffSettings from "../Pages/StaffSettings";
 
 // Import Staff Login View
-import LoginEffect from '../../Landing Page/Log/LoginEffect';
+import LoginEffect from "../../Landing Page/Auth/LoginEffect";
 
 // Layout wrapper for authenticated staff pages (Manages collapsible sidebar state)
 const StaffLayout = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50/60 w-full overflow-x-hidden">
+    <div className="min-h-screen w-full overflow-x-hidden bg-slate-50/60">
       {/* Persistent Staff Sidebar (Handles both desktop fixed aside and mobile sticky header) */}
       <StaffSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
       {/* Main Content Viewport (Full width on mobile, dynamic left padding on desktop) */}
-      <main className={`w-full ${isCollapsed ? 'lg:pl-20' : 'lg:pl-64'} min-h-screen transition-all duration-300`}>
+      <main
+        className={`w-full ${isCollapsed ? "lg:pl-20" : "lg:pl-64"} min-h-screen transition-all duration-300`}
+      >
         <Outlet />
       </main>
     </div>
@@ -45,7 +47,7 @@ const OperatorStaff = () => {
       {/* Authenticated Staff Portal Layout Group */}
       <Route element={<StaffLayout />}>
         <Route path="dashboard" element={<StaffDashboard />} />
-        
+
         {/* Placeholder routes for upcoming staff pages */}
         <Route path="attendance" element={<Attendance />} />
         <Route path="gradebook" element={<Gradebook />} />

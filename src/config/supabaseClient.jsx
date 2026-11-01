@@ -1,8 +1,13 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseURL = process.env.REACT_APP_SUPABASE_URL
-const supabaseKey = process.env.REACT_APP_SUPABASE_KEY
+// Safe fallbacks to prevent the White Screen of Death if .env variables are missing
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://ztlhydgbpzwbvxxatvvk.supabase.co';
+const supabaseKey = process.env.REACT_APP_SUPABASE_KEY || 'sb_publishable_Mg-39Zcjs6TMkC_D0gogGw_di90sYhc';
 
-const supabase = createClient(supabaseURL, supabaseKey);
+if (!process.env.REACT_APP_SUPABASE_URL || !process.env.REACT_APP_SUPABASE_KEY) {
+  console.warn('⚠️ Supabase environment variables are missing. Check your .env file.');
+}
 
-export default supabase
+const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+export default supabaseClient;

@@ -6,6 +6,7 @@ import {
   Users, 
   ClipboardCheck, 
   Megaphone, 
+  BookOpen,
   Settings, 
   LogOut, 
   Menu, 
@@ -18,9 +19,11 @@ import schoolLogo from '../../../assets/logo.png';
 const AdminSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleConfirmLogout = () => {
+    setShowLogoutModal(false);
     navigate('/admin/login');
   };
 
@@ -29,6 +32,7 @@ const AdminSidebar = () => {
     { name: 'User Management', path: 'users', icon: Users },
     { name: 'Academic Approvals', path: 'approvals', icon: ClipboardCheck, hasNotification: true },
     { name: 'School Broadcasts', path: 'broadcasts', icon: Megaphone },
+    { name: 'Curriculum Manager', path: 'curriculum', icon: BookOpen },
   ];
 
   const sidebarContent = (isMobile = false) => (
@@ -43,7 +47,7 @@ const AdminSidebar = () => {
               <img
                 src={schoolLogo}
                 alt="HighFlyer Logo"
-                className="w-10 h-10 object-contain  "
+                className="w-10 h-10 object-contain"
               />
               <div className="whitespace-nowrap">
                 <h1 className="text-sm font-black tracking-tight text-white leading-none">
@@ -165,7 +169,7 @@ const AdminSidebar = () => {
                 </div>
               </div>
               <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutModal(true)}
                 className="p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition-colors cursor-pointer flex-shrink-0"
                 title="Logout"
               >
@@ -178,7 +182,7 @@ const AdminSidebar = () => {
                 AD
               </div>
               <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutModal(true)}
                 className="p-2.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-xl transition-colors cursor-pointer"
                 title="Logout"
               >
@@ -209,7 +213,7 @@ const AdminSidebar = () => {
           <img
             src={schoolLogo}
             alt="Logo"
-            className="w-9 h-9 object-contain "
+            className="w-9 h-9 object-contain"
           />
           <div>
             <h2 className="text-xs font-black tracking-tight leading-none text-white">Highflyer</h2>
@@ -247,6 +251,56 @@ const AdminSidebar = () => {
               className="relative w-72 max-w-full bg-[#121B2D] text-slate-300 h-full shadow-2xl z-10 flex flex-col"
             >
               {sidebarContent(true)}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Logout Confirmation Modal matching screenshot design */}
+      <AnimatePresence>
+        {showLogoutModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLogoutModal(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-slate-100 z-10 text-center space-y-5"
+            >
+              <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto border border-rose-100 shadow-sm">
+                <LogOut size={26} className="transform rotate-180" />
+              </div>
+
+              <div className="space-y-1.5">
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">End Admin Session?</h3>
+                <p className="text-xs font-medium text-slate-500 leading-relaxed">
+                  Are you sure you want to log out of your Admin Central session? You will need to sign in again to access administrative controls.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutModal(false)}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-3 rounded-2xl text-xs transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmLogout}
+                  className="bg-rose-500 hover:bg-rose-600 text-white font-extrabold py-3 rounded-2xl text-xs shadow-lg shadow-rose-500/25 transition-all cursor-pointer"
+                >
+                  Log Out
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

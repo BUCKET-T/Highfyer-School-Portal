@@ -64,9 +64,9 @@ const StaffLogin = () => {
                 <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                   Password
                 </label>
-                <a href="#forgot-password" className="text-xs font-semibold text-brand-coral hover:underline">
+                <Link to="/auth/reset-password" className="text-xs font-semibold text-brand-coral hover:underline">
                   Forgot Password?
-                </a>
+                </Link>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">

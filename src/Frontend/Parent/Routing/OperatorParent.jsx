@@ -1,26 +1,26 @@
-import React from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import React from "react";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 
 // Import Login view
-import LoginEffect from '../../Landing Page/Log/LoginEffect';
+import LoginEffect from "../../Landing Page/Auth/LoginEffect";
 
 // Import Sidebar component
-import Sidebar from '../Components/Sidebar';
+import Sidebar from "../Components/Sidebar";
 
 // Import Parent Portal pages
-import Dashboard from '../Pages/Dashboard';
-import MyCourses from '../Pages/MyCourses';
-import Results from '../Pages/Result';
-import Assignments from '../Pages/Assignments'; 
-import Feed from '../Pages/Feed';
-import Settings from '../Pages/Settings';
+import Dashboard from "../Pages/Dashboard";
+import MyCourses from "../Pages/MyCourses";
+import Results from "../Pages/Result";
+import Assignments from "../Pages/Assignments";
+import Feed from "../Pages/Feed";
+import Settings from "../Pages/Settings";
 
 // Parent Layout Wrapper: Locks viewport height so sidebar stays fixed while main content scrolls independently
 const ParentLayout = () => {
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-slate-50 w-full overflow-hidden">
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-slate-50 md:flex-row">
       <Sidebar />
-      <main className="flex-1 w-full min-w-0 h-full overflow-y-auto">
+      <main className="h-full w-full min-w-0 flex-1 overflow-y-auto">
         <Outlet />
       </main>
     </div>
@@ -32,7 +32,7 @@ const OperatorParent = () => {
     <Routes>
       {/* Default redirect to login page */}
       <Route path="/" element={<Navigate to="login" replace />} />
-      
+
       {/* Standalone Login Route (No Sidebar) */}
       <Route path="login" element={<LoginEffect />} />
 
@@ -44,7 +44,6 @@ const OperatorParent = () => {
         <Route path="results" element={<Results />} />
         <Route path="feed" element={<Feed />} />
         <Route path="settings" element={<Settings />} />
-
       </Route>
 
       {/* Fallback for unmapped parent paths */}

@@ -1,28 +1,30 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
+// Import Custom Backend Logic Hook
+import { useParentLoginLogic } from '../../../Backend/Auth/ParentLoginLogic';
+
 // Import Shared Spinner Loader
-import Spinner from '../../Shared/loaders/Spinner';
+import Spinner from '../../Shared/loaders/Spinner'
 
 // Import logo asset
 import schoolLogo from '../../../assets/logo.png';
 
 const ParentLogin = () => {
-  const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Simulated login delay before navigating to parent dashboard
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate('/parent/dashboard');
-    }, 1200);
-  };
+  const {
+    emailOrId,
+    setEmailOrId,
+    password,
+    setPassword,
+    showPassword,
+    setShowPassword,
+    rememberMe,
+    setRememberMe,
+    isLoading,
+    errorMsg,
+    handleSubmit,
+  } = useParentLoginLogic();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 w-full h-full min-h-[580px] bg-white">
@@ -34,7 +36,7 @@ const ParentLogin = () => {
 
         <div className="relative z-10 space-y-6">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12  flex items-center justify-center ">
+            <div className="w-12 h-12 flex items-center justify-center">
               <img src={schoolLogo} alt="HighFlyer Logo" className="w-full h-full object-contain" />
             </div>
             <div className="flex flex-col">
@@ -88,7 +90,7 @@ const ParentLogin = () => {
       {/* Right Column: Parent Form */}
       <div className="md:col-span-7 bg-white p-8 sm:p-12 flex flex-col justify-between">
         <div>
-          <div className="space-y-1 mb-8">
+          <div className="space-y-1 mb-6">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-brand-navy tracking-tight">
               Parent Login
             </h2>
@@ -96,6 +98,12 @@ const ParentLogin = () => {
               Please enter your credentials to continue
             </p>
           </div>
+
+          {errorMsg && (
+            <div className="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs font-bold text-rose-600">
+              {errorMsg}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
@@ -111,6 +119,8 @@ const ParentLogin = () => {
                 <input
                   type="text"
                   required
+                  value={emailOrId}
+                  onChange={(e) => setEmailOrId(e.target.value)}
                   placeholder="Enter your Parent ID or Email"
                   className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-white transition-all"
                 />
@@ -122,9 +132,9 @@ const ParentLogin = () => {
                 <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                   Password
                 </label>
-                <a href="#forgot-password" className="text-xs font-semibold text-brand-blue hover:underline">
+                <Link to="/auth/reset-password" className="text-xs font-semibold text-brand-blue hover:underline">
                   Forgot Password?
-                </a>
+                </Link>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -135,13 +145,15 @@ const ParentLogin = () => {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-white transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                     {showPassword ? (
@@ -161,7 +173,9 @@ const ParentLogin = () => {
               <input
                 type="checkbox"
                 id="rememberMeParent"
-                className="w-4 h-4 rounded border-slate-300 text-brand-blue focus:ring-brand-blue"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-brand-blue focus:ring-brand-blue cursor-pointer"
               />
               <label htmlFor="rememberMeParent" className="text-xs font-semibold text-slate-600 select-none cursor-pointer">
                 Stay logged in for 30 days

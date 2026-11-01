@@ -10,8 +10,8 @@ import schoolLogo from '../../../assets/logo.png';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const [adminEmail, setAdminEmail] = useState('ojotee346@gmail.com');
-  const [password, setPassword] = useState('********');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +68,7 @@ const AdminLogin = () => {
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
                     required
+                    placeholder="Enter your Parent ID or Email"
                     className="w-full bg-sky-50/50 border border-slate-200 focus:border-sky-500 rounded-2xl pl-11 pr-4 py-3.5 text-xs sm:text-sm font-bold text-brand-navy placeholder:text-slate-400 focus:outline-none transition-all shadow-inner"
                   />
                 </div>
@@ -81,7 +82,8 @@ const AdminLogin = () => {
                   </label>
                   <button
                     type="button"
-                    onClick={() => alert('Please contact the IT Super Administrator to reset your admin credentials.')}
+                    onClick={() => navigate('/auth/reset-password')}
+                    
                     className="text-[11px] sm:text-xs font-bold text-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
                   >
                     Forgot Password?
@@ -99,6 +101,7 @@ const AdminLogin = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    placeholder="••••••••"
                     className="w-full bg-sky-50/50 border border-slate-200 focus:border-sky-500 rounded-2xl pl-11 pr-11 py-3.5 text-xs sm:text-sm font-bold text-brand-navy placeholder:text-slate-400 focus:outline-none transition-all shadow-inner"
                   />
                   <button
@@ -138,7 +141,6 @@ const AdminLogin = () => {
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
                     <Spinner size="sm" />
-                    
                   </div>
                 ) : (
                   <span>Login to Admin Portal</span>
@@ -195,7 +197,7 @@ const AdminLogin = () => {
           {/* Footer Copyright */}
           <div className="z-10 pt-4 border-t border-slate-800">
             <p className="text-[11px] font-bold text-slate-400">
-             © {new Date().getFullYear()} HighFlyer Kiddies Academy
+              © {new Date().getFullYear()} HighFlyer Kiddies Academy
             </p>
           </div>
 
