@@ -15,6 +15,7 @@ import {
 
 // School Logo asset
 import schoolLogo from '../../../assets/logo.png';
+import { useSidebarLogic } from '../../../Backend/Admin/AdminSidebarLogic';
 
 const AdminSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -22,16 +23,23 @@ const AdminSidebar = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
 
+  const {
+    adminProfile,
+    hasPendingApprovals,
+    hasNewBroadcast,
+    handleLogout
+  } = useSidebarLogic();
+
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
-    navigate('/admin/login');
+    handleLogout(navigate);
   };
 
   const navItems = [
     { name: 'Dashboard', path: 'dashboard', icon: LayoutDashboard },
     { name: 'User Management', path: 'users', icon: Users },
-    { name: 'Academic Approvals', path: 'approvals', icon: ClipboardCheck, hasNotification: true },
-    { name: 'School Broadcasts', path: 'broadcasts', icon: Megaphone },
+    { name: 'Academic Approvals', path: 'approvals', icon: ClipboardCheck, hasNotification: hasPendingApprovals },
+    { name: 'School Broadcasts', path: 'broadcasts', icon: Megaphone, hasNotification: hasNewBroadcast },
     { name: 'Curriculum Manager', path: 'curriculum', icon: BookOpen },
   ];
 
@@ -49,7 +57,7 @@ const AdminSidebar = () => {
                 alt="HighFlyer Logo"
                 className="w-10 h-10 object-contain"
               />
-              <div className="whitespace-nowrap">
+              <div className="whitespace-nowrap text-left">
                 <h1 className="text-sm font-black tracking-tight text-white leading-none">
                   Highflyer
                 </h1>
@@ -115,10 +123,10 @@ const AdminSidebar = () => {
                 </div>
 
                 {(!isCollapsed || isMobile) && (
-                  <span className="ml-3 truncate tracking-wide">{item.name}</span>
+                  <span className="ml-3 truncate tracking-wide text-left">{item.name}</span>
                 )}
 
-                {/* Pink Notification Dot */}
+                {/* Pink Notification Dot (Only renders when notification state is true) */}
                 {item.hasNotification && (
                   <span
                     className={`absolute ${
@@ -152,20 +160,28 @@ const AdminSidebar = () => {
           <div className="flex items-center justify-center w-6 h-6 flex-shrink-0">
             <Settings size={20} />
           </div>
-          {(!isCollapsed || isMobile) && <span className="ml-3 truncate">System Settings</span>}
+          {(!isCollapsed || isMobile) && <span className="ml-3 truncate text-left">System Settings</span>}
         </NavLink>
 
-        {/* Admin Profile Card */}
+        {/* Admin Profile Card (Synced with Supabase profile & avatar) */}
         <div className="pt-2">
           {(!isCollapsed || isMobile) ? (
             <div className="bg-slate-900/80 border border-slate-800/80 p-3 rounded-2xl flex items-center justify-between shadow-inner">
               <div className="flex items-center space-x-3 overflow-hidden">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm flex-shrink-0 shadow">
-                  AD
-                </div>
-                <div className="truncate">
-                  <h4 className="text-xs font-black text-white truncate">Admin Director</h4>
-                  <p className="text-[10px] font-extrabold text-sky-400 uppercase tracking-wider">SUPER ADMIN</p>
+                {adminProfile.avatar ? (
+                  <img
+                    src={adminProfile.avatar}
+                    alt={adminProfile.name}
+                    className="w-10 h-10 rounded-xl object-cover border border-white/25 flex-shrink-0 shadow"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm flex-shrink-0 shadow">
+                    {adminProfile.name ? adminProfile.name.split(' ').map(n => n[0]).join('').slice(0, 2) : 'AD'}
+                  </div>
+                )}
+                <div className="truncate text-left">
+                  <h4 className="text-xs font-black text-white truncate">{adminProfile.name}</h4>
+                  <p className="text-[10px] font-extrabold text-sky-400 uppercase tracking-wider truncate">{adminProfile.roleTitle}</p>
                 </div>
               </div>
               <button
@@ -178,9 +194,18 @@ const AdminSidebar = () => {
             </div>
           ) : (
             <div className="flex flex-col items-center space-y-3 pb-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-xs shadow" title="Admin Director">
-                AD
-              </div>
+              {adminProfile.avatar ? (
+                <img
+                  src={adminProfile.avatar}
+                  alt={adminProfile.name}
+                  className="w-10 h-10 rounded-xl object-cover border border-white/25 flex-shrink-0 shadow"
+                  title={adminProfile.name}
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-xs shadow" title={adminProfile.name}>
+                  {adminProfile.name ? adminProfile.name.split(' ').map(n => n[0]).join('').slice(0, 2) : 'AD'}
+                </div>
+              )}
               <button
                 onClick={() => setShowLogoutModal(true)}
                 className="p-2.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-xl transition-colors cursor-pointer"
@@ -215,7 +240,7 @@ const AdminSidebar = () => {
             alt="Logo"
             className="w-9 h-9 object-contain"
           />
-          <div>
+          <div className="text-left">
             <h2 className="text-xs font-black tracking-tight leading-none text-white">Highflyer</h2>
             <p className="text-[9px] font-extrabold text-sky-400 uppercase tracking-wider pt-0.5">ADMIN CENTRAL</p>
           </div>
@@ -256,7 +281,7 @@ const AdminSidebar = () => {
         )}
       </AnimatePresence>
 
-      {/* Logout Confirmation Modal matching screenshot design */}
+      {/* Logout Confirmation Modal */}
       <AnimatePresence>
         {showLogoutModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
