@@ -12,7 +12,7 @@ export const useSidebarLogic = () => {
 
   const fetchSidebarData = useCallback(async () => {
     try {
-      // 1. Fetch Admin Profile Details (Name, Role Title, Avatar)
+      // 1. Fetch Admin Profile Details
       const { data: profileData, error: profileError } = await supabaseClient
         .from('profiles')
         .select('full_name, role_title, role, avatar_url')
@@ -27,28 +27,39 @@ export const useSidebarLogic = () => {
         });
       }
 
-      // 2. Check for Pending Academic Approvals (Grade approval requests)
-      const { count: approvalsCount, error: approvalsError } = await supabaseClient
+      // 2. Check for Pending Academic Approvals & compare with last viewed timestamp
+      const { data: recentApprovals } = await supabaseClient
         .from('academic_approvals')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
+        .select('created_at')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-      if (!approvalsError && approvalsCount !== null && approvalsCount > 0) {
-        setHasPendingApprovals(true);
+      if (recentApprovals && recentApprovals.length > 0) {
+        const latestApprovalTime = new Date(recentApprovals[0].created_at).getTime();
+        const viewedApprovalTime = localStorage.getItem('approvals_viewed_at') 
+          ? new Date(localStorage.getItem('approvals_viewed_at')).getTime() 
+          : 0;
+
+        setHasPendingApprovals(latestApprovalTime > viewedApprovalTime);
       } else {
         setHasPendingApprovals(false);
       }
 
-      // 3. Check for Recent School Broadcasts (within 24 hours)
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      // 3. Check for Recent School Broadcasts & compare with last viewed timestamp
       const { data: recentBroadcasts } = await supabaseClient
         .from('school_broadcasts')
-        .select('id')
-        .gte('created_at', twentyFourHoursAgo)
+        .select('created_at')
+        .order('created_at', { ascending: false })
         .limit(1);
 
       if (recentBroadcasts && recentBroadcasts.length > 0) {
-        setHasNewBroadcast(true);
+        const latestBroadcastTime = new Date(recentBroadcasts[0].created_at).getTime();
+        const viewedBroadcastTime = localStorage.getItem('broadcasts_viewed_at') 
+          ? new Date(localStorage.getItem('broadcasts_viewed_at')).getTime() 
+          : 0;
+
+        setHasNewBroadcast(latestBroadcastTime > viewedBroadcastTime);
       } else {
         setHasNewBroadcast(false);
       }
@@ -61,6 +72,17 @@ export const useSidebarLogic = () => {
   useEffect(() => {
     fetchSidebarData();
   }, [fetchSidebarData]);
+
+  // Handlers to clear dots when components are opened
+  const handleOpenApprovals = () => {
+    setHasPendingApprovals(false);
+    localStorage.setItem('approvals_viewed_at', new Date().toISOString());
+  };
+
+  const handleOpenBroadcasts = () => {
+    setHasNewBroadcast(false);
+    localStorage.setItem('broadcasts_viewed_at', new Date().toISOString());
+  };
 
   // Secure Logout Handler
   const handleLogout = async (navigate) => {
@@ -77,6 +99,8 @@ export const useSidebarLogic = () => {
     adminProfile,
     hasPendingApprovals,
     hasNewBroadcast,
+    handleOpenApprovals,
+    handleOpenBroadcasts,
     handleLogout
   };
 };

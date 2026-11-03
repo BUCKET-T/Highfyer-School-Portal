@@ -27,6 +27,8 @@ const AdminSidebar = () => {
     adminProfile,
     hasPendingApprovals,
     hasNewBroadcast,
+    handleOpenApprovals,
+    handleOpenBroadcasts,
     handleLogout
   } = useSidebarLogic();
 
@@ -38,8 +40,20 @@ const AdminSidebar = () => {
   const navItems = [
     { name: 'Dashboard', path: 'dashboard', icon: LayoutDashboard },
     { name: 'User Management', path: 'users', icon: Users },
-    { name: 'Academic Approvals', path: 'approvals', icon: ClipboardCheck, hasNotification: hasPendingApprovals },
-    { name: 'School Broadcasts', path: 'broadcasts', icon: Megaphone, hasNotification: hasNewBroadcast },
+    { 
+      name: 'Academic Approvals', 
+      path: 'approvals', 
+      icon: ClipboardCheck, 
+      hasNotification: hasPendingApprovals,
+      onClick: handleOpenApprovals 
+    },
+    { 
+      name: 'School Broadcasts', 
+      path: 'broadcasts', 
+      icon: Megaphone, 
+      hasNotification: hasNewBroadcast,
+      onClick: handleOpenBroadcasts 
+    },
     { name: 'Curriculum Manager', path: 'curriculum', icon: BookOpen },
   ];
 
@@ -106,7 +120,10 @@ const AdminSidebar = () => {
               <NavLink
                 key={item.path}
                 to={item.path}
-                onClick={() => isMobile && setIsMobileOpen(false)}
+                onClick={() => {
+                  if (item.onClick) item.onClick();
+                  if (isMobile) setIsMobileOpen(false);
+                }}
                 className={({ isActive }) =>
                   `relative flex items-center ${
                     isCollapsed && !isMobile ? 'justify-center px-0 py-3.5' : 'px-3.5 py-3'
@@ -126,7 +143,7 @@ const AdminSidebar = () => {
                   <span className="ml-3 truncate tracking-wide text-left">{item.name}</span>
                 )}
 
-                {/* Pink Notification Dot (Only renders when notification state is true) */}
+                {/* Pink Notification Dot */}
                 {item.hasNotification && (
                   <span
                     className={`absolute ${
@@ -163,7 +180,7 @@ const AdminSidebar = () => {
           {(!isCollapsed || isMobile) && <span className="ml-3 truncate text-left">System Settings</span>}
         </NavLink>
 
-        {/* Admin Profile Card (Synced with Supabase profile & avatar) */}
+        {/* Admin Profile Card */}
         <div className="pt-2">
           {(!isCollapsed || isMobile) ? (
             <div className="bg-slate-900/80 border border-slate-800/80 p-3 rounded-2xl flex items-center justify-between shadow-inner">
@@ -222,7 +239,7 @@ const AdminSidebar = () => {
 
   return (
     <>
-      {/* Desktop Sidebar with Smooth Framer Motion Width Transition */}
+      {/* Desktop Sidebar */}
       <motion.aside
         initial={false}
         animate={{ width: isCollapsed ? '88px' : '280px' }}
@@ -235,11 +252,7 @@ const AdminSidebar = () => {
       {/* Mobile Sticky Header Bar */}
       <div className="lg:hidden w-full bg-[#121B2D] text-white px-4 py-3.5 flex items-center justify-between border-b border-slate-800 sticky top-0 z-30 shadow-md">
         <div className="flex items-center space-x-3">
-          <img
-            src={schoolLogo}
-            alt="Logo"
-            className="w-9 h-9 object-contain"
-          />
+          <img src={schoolLogo} alt="Logo" className="w-9 h-9 object-contain" />
           <div className="text-left">
             <h2 className="text-xs font-black tracking-tight leading-none text-white">Highflyer</h2>
             <p className="text-[9px] font-extrabold text-sky-400 uppercase tracking-wider pt-0.5">ADMIN CENTRAL</p>
@@ -258,7 +271,6 @@ const AdminSidebar = () => {
       <AnimatePresence>
         {isMobileOpen && (
           <div className="fixed inset-0 z-50 lg:hidden flex">
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -266,8 +278,6 @@ const AdminSidebar = () => {
               onClick={() => setIsMobileOpen(false)}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
-
-            {/* Drawer Content */}
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
@@ -281,7 +291,7 @@ const AdminSidebar = () => {
         )}
       </AnimatePresence>
 
-      {/* Logout Confirmation Modal */}
+      {/* Logout Modal */}
       <AnimatePresence>
         {showLogoutModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -292,7 +302,6 @@ const AdminSidebar = () => {
               onClick={() => setShowLogoutModal(false)}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm"
             />
-
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -306,7 +315,7 @@ const AdminSidebar = () => {
               <div className="space-y-1.5">
                 <h3 className="text-xl font-black text-slate-900 tracking-tight">End Admin Session?</h3>
                 <p className="text-xs font-medium text-slate-500 leading-relaxed">
-                  Are you sure you want to log out of your Admin Central session? You will need to sign in again to access administrative controls.
+                  Are you sure you want to log out of your Admin Central session?
                 </p>
               </div>
 
