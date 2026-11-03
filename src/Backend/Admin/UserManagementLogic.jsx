@@ -132,9 +132,9 @@ export const useUserManagementLogic = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const maxSize = 30 * 1024;
+    const maxSize = 45 * 1024;
     if (file.size > maxSize) {
-      showNotification('Avatar file size must not exceed 30KB.');
+      showNotification('Avatar file size must not exceed 45KB.');
       return;
     }
     setAvatarFile(file);

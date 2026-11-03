@@ -462,15 +462,15 @@ const UserManagement = () => {
 
                 <form onSubmit={handleCreateUser} id="onboardUserForm" className="space-y-4">
                   
-                  {/* Avatar Upload with 30KB limit notice */}
+                  {/* Avatar Upload with 45KB limit notice */}
                   <div className="space-y-1.5 text-left">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                      PROFILE AVATAR (MAX 30KB)
+                      PROFILE AVATAR (MAX 45KB)
                     </label>
                     <label className="border-2 border-dashed border-slate-200 hover:border-sky-400 p-4 rounded-2xl flex items-center justify-center cursor-pointer transition-colors space-x-3 bg-slate-50/50">
                       <Upload size={18} className="text-slate-400" />
                       <span className="text-xs font-bold text-slate-700">
-                        {avatarFile ? avatarFile.name : 'Choose avatar image (<= 30KB)'}
+                        {avatarFile ? avatarFile.name : 'Choose avatar image (<= 45KB)'}
                       </span>
                       <input
                         type="file"
