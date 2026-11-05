@@ -45,7 +45,7 @@ const AdminDashboard = () => {
       <div className="bg-white p-4 sm:p-7 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 relative">
         <div className="space-y-1 text-left">
           <h1 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Welcome back, Admin Director!
+            Welcome back, {adminName}!
           </h1>
           <p className="text-xs sm:text-sm font-medium text-slate-500">
             Here's what's happening across <span className="font-extrabold text-sky-500">Highflyer Kiddies Academy</span> today.

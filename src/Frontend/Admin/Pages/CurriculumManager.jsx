@@ -379,7 +379,7 @@ const CurriculumManager = () => {
             <div className="bg-[#121B2D] p-6 rounded-3xl text-white shadow-xl space-y-3 text-left">
               <h4 className="text-xs font-black text-sky-400 uppercase tracking-widest">Database Synced</h4>
               <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                Changes saved here update the Supabase <code className="text-sky-300">class_curricula</code> table with structured 12-week topics.
+                Changes saved here update the backend  table with structured 12-week topics.
               </p>
             </div>
           </div>

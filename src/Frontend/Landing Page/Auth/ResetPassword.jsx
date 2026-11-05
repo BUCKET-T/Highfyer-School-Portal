@@ -7,6 +7,7 @@ import Spinner from '../../Shared/loaders/Spinner';
 
 // Import Logo asset
 import schoolLogo from '../../../assets/logo.png';
+import supabaseClient from '../../../config/supabaseClient';
 
 const ResetPassword = () => {
   const [email, setEmail] = useState('');
@@ -14,16 +15,41 @@ const ResetPassword = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  const handleResetSubmit = (e) => {
+  const handleResetSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg(null);
 
-    // Simulated password reset trigger delay (Supabase auth.resetPasswordForEmail integration point)
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // 1. Verify if email exists in your database profiles table first
+      const { data: profileCheck, error: profileError } = await supabaseClient
+        .from('profiles')
+        .select('email')
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+
+      if (!profileCheck) {
+        setErrorMsg('No account associated with this email address.');
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Trigger Supabase Auth password reset email
+      const { error: resetError } = await supabaseClient.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/auth/update-password`,
+      });
+
+      if (resetError) throw resetError;
+
       setIsSubmitted(true);
-    }, 1400);
+    } catch (err) {
+      console.error('Password reset error:', err.message);
+      setErrorMsg(err.message || 'Failed to send reset instructions. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -40,13 +66,13 @@ const ResetPassword = () => {
               <div className="w-12 h-12 flex items-center justify-center">
                 <img src={schoolLogo} alt="HighFlyer Logo" className="w-full h-full object-contain" />
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col text-left">
                 <span className="text-lg font-extrabold tracking-tight text-white leading-none">HighFlyer</span>
                 <span className="text-[10px] font-semibold text-brand-sky uppercase tracking-wider pt-1">Kiddies Academy</span>
               </div>
             </div>
 
-            <div className="pt-2 space-y-2">
+            <div className="pt-2 space-y-2 text-left">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-snug">
                 Secure Account Recovery
               </h2>
@@ -56,14 +82,14 @@ const ResetPassword = () => {
             </div>
           </div>
 
-          <div className="relative z-10 py-6 space-y-3 border-t border-slate-700/60 my-6">
+          <div className="relative z-10 py-6 space-y-3 border-t border-slate-700/60 my-6 text-left">
             <div className="flex items-center space-x-3 text-xs sm:text-sm font-medium text-slate-200">
               <div className="w-6 h-6 rounded-full bg-brand-blue/30 text-brand-sky flex items-center justify-center flex-shrink-0">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <span>Fast Email Verification Code</span>
+              <span>Fast Database Verification</span>
             </div>
             <div className="flex items-center space-x-3 text-xs sm:text-sm font-medium text-slate-200">
               <div className="w-6 h-6 rounded-full bg-brand-blue/30 text-brand-sky flex items-center justify-center flex-shrink-0">
@@ -83,20 +109,20 @@ const ResetPassword = () => {
             </div>
           </div>
 
-          <div className="relative z-10 text-[11px] text-slate-400">
+          <div className="relative z-10 text-[11px] text-slate-400 text-left">
             © {new Date().getFullYear()} HighFlyer Kiddies Academy
           </div>
         </div>
 
         {/* Right Column: Reset Password Form / Success Screen */}
-        <div className="md:col-span-7 bg-white p-8 sm:p-12 flex flex-col justify-between">
+        <div className="md:col-span-7 bg-white p-8 sm:p-12 flex flex-col justify-between text-left">
           <div>
             <div className="space-y-1 mb-6">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-brand-navy tracking-tight">
                 Reset Password
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                Enter your email address to receive reset instructions
+                Enter your email address to verify against database records
               </p>
             </div>
 
@@ -156,7 +182,7 @@ const ResetPassword = () => {
                 </div>
                 <h3 className="text-base font-black text-slate-800">Check Your Email</h3>
                 <p className="text-xs font-medium text-slate-600 leading-relaxed">
-                  We have sent password recovery instructions to <strong className="text-slate-800">{email}</strong>. Please check your inbox or spam folder.
+                  We have verified <strong className="text-slate-800">{email}</strong> in our database and sent password recovery instructions. Please check your inbox or spam folder.
                 </p>
                 <button
                   onClick={() => setIsSubmitted(false)}

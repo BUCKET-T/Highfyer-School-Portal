@@ -31,12 +31,20 @@ export const useCurriculumManagerLogic = () => {
   const termOptions = ['Term 1', 'Term 2', 'Term 3'];
 
   const subjectOptions = [
+    'Numeracy',
+    'Literacy',
+    'Rhymes',
+    'General Paper',
+    'CRS',
     'Mathematics', 
     'English language', 
     'Basic science', 
-    'Social studies', 
+    'Social studies',
+    'History',
+    'Yoruba',
     'Creative & Cultural Arts',
     'Vocational Studies',
+    'Security Education',
     'Quantitative Reasoning',
     'Verbal Reasoning',
     'Physical Health Education',

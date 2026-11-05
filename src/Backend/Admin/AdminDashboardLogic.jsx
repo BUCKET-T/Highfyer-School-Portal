@@ -61,29 +61,47 @@ export const useAdminDashboardLogic = () => {
         ]);
       }
 
-      // 3. Fetch Active Academic Session
+      // 3. Fetch Currently Active Academic Session (Explicitly filtered by is_active = true)
       const { data: sessionData, error: sessionError } = await supabaseClient
         .from('academic_sessions')
         .select('session_name, term_name')
         .eq('is_active', true)
+        .order('created_at', { ascending: false })
         .limit(1);
 
       if (!sessionError && sessionData && sessionData.length > 0) {
         const active = sessionData[0];
-        setActiveSessionText(`${active.term_name || 'Term 1'}, ${active.session_name || '2024/2025'}`);
+        setActiveSessionText(`${active.term_name || 'Term 1'}, ${active.session_name || ''}`);
       } else {
-        setActiveSessionText('Term 1, 2024/2025 Session');
+        setActiveSessionText('Term 1, 2025/2026 Session');
       }
 
-      // 4. Fetch Admin Profile Avatar & Name
-      const { data: profileData, error: profileError } = await supabaseClient
-        .from('profiles')
-        .select('full_name, avatar_url')
-        .limit(1);
+      // 4. Fetch Logged-in Admin Profile Avatar & Full Name for Greeting & Avatar View
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user) {
+        const { data: userProfile, error: userProfileError } = await supabaseClient
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('email', user.email)
+          .single();
 
-      if (!profileError && profileData && profileData.length > 0) {
-        if (profileData[0].avatar_url) setAdminAvatar(profileData[0].avatar_url);
-        if (profileData[0].full_name) setAdminName(profileData[0].full_name);
+        if (!userProfileError && userProfile) {
+          if (userProfile.full_name) setAdminName(userProfile.full_name);
+          if (userProfile.avatar_url) setAdminAvatar(userProfile.avatar_url);
+        }
+      }
+
+      // Fallback if auth user lookup fails: grab the first profile row
+      if (!adminName || adminName === 'Admin Director') {
+        const { data: profileData, error: profileError } = await supabaseClient
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .limit(1);
+
+        if (!profileError && profileData && profileData.length > 0) {
+          if (profileData[0].avatar_url) setAdminAvatar(profileData[0].avatar_url);
+          if (profileData[0].full_name) setAdminName(profileData[0].full_name);
+        }
       }
 
       // 5. Strictly separate Total Pupils and Active Staff from profiles table
@@ -115,7 +133,7 @@ export const useAdminDashboardLogic = () => {
     } finally {
       setIsLoadingLogs(false);
     }
-  }, []);
+  }, [adminName]);
 
   useEffect(() => {
     fetchDashboardData();

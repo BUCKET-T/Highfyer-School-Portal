@@ -17,7 +17,8 @@ import CurriculumSection from "../Landing Page/components/CurriculumSection";
 import ContactSection from "../Landing Page/components/ContactSection";
 
 // Auth Pages
-import ResetPassword from "../Landing Page/Auth/ResetPassword"; // Adjust path if located elsewhere
+import ResetPassword from "../Landing Page/Auth/ResetPassword";
+import UpdatePassword from "../Landing Page/Auth/UpdatePassword"; 
 
 // Sub-Router Module Imports
 import OperatorParent from "../../Frontend/Parent/Routing/OperatorParent";
@@ -79,8 +80,9 @@ const Operator = () => {
             }
           />
 
-          {/* Centralized Password Recovery Route */}
+          {/* Centralized Password Recovery Routes */}
           <Route path="/auth/reset-password" element={<ResetPassword />} />
+          <Route path="/auth/update-password" element={<UpdatePassword />} />
 
           {/* Modular Sub-Router Delegates */}
           <Route path="/parent/*" element={<OperatorParent />} />
