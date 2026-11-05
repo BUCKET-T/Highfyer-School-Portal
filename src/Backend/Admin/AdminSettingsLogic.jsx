@@ -75,7 +75,7 @@ export const useAdminSettingsLogic = () => {
   // Fetch initial profile & active academic session data from Supabase
   const fetchAdminData = useCallback(async () => {
     try {
-      // Fetch Profile (pulls the first record matching your profile table)
+      // Fetch Profile
       const { data: profileData, error: profileError } = await supabaseClient
         .from('profiles')
         .select('*')
@@ -87,7 +87,7 @@ export const useAdminSettingsLogic = () => {
           fullName: profileData.full_name || '',
           portalEmail: profileData.email || '',
           phone: profileData.phone || '',
-          roleTitle: profileData.role_title || '', // Dynamically syncs role_title from database
+          roleTitle: profileData.role_title || '',
           avatar: profileData.avatar_url || ''
         });
       }
@@ -163,7 +163,7 @@ export const useAdminSettingsLogic = () => {
     setIsSaving(true);
 
     try {
-      // Update profiles table targeting by full_name or email to match your record safely
+      // 1. Update profiles table
       const { error: profileError } = await supabaseClient
         .from('profiles')
         .update({
@@ -173,26 +173,65 @@ export const useAdminSettingsLogic = () => {
           avatar_url: profile.avatar,
           updated_at: new Date()
         })
-        .eq('full_name', profile.fullName); // Safe identifier matching your profile name
+        .eq('full_name', profile.fullName);
 
       if (profileError) throw profileError;
 
-      const { error: sessionError } = await supabaseClient
+      // 2. Deactivate all existing academic sessions first to guarantee single active record
+      const { error: deactivateError } = await supabaseClient
         .from('academic_sessions')
-        .upsert({
-          session_name: settings.activeSession,
-          term_name: settings.currentTerm,
-          start_date: settings.termStartDate || null,
-          end_date: settings.termEndDate || null,
-          score_entry_open: settings.scoreEntryWindow,
-          parent_portal_open: settings.parentResultPortal,
-          is_active: true
-        });
+        .update({ is_active: false })
+        .eq('is_active', true);
+
+      if (deactivateError) throw deactivateError;
+
+      // 3. Check if this session & term combination already exists in the table
+      const { data: existingSession, error: fetchErr } = await supabaseClient
+        .from('academic_sessions')
+        .select('id')
+        .eq('session_name', settings.activeSession)
+        .eq('term_name', settings.currentTerm)
+        .maybeSingle();
+
+      if (fetchErr) throw fetchErr;
+
+      let sessionError;
+      if (existingSession) {
+        // Update the existing record and set it to active
+        const { error } = await supabaseClient
+          .from('academic_sessions')
+          .update({
+            start_date: settings.termStartDate || null,
+            end_date: settings.termEndDate || null,
+            score_entry_open: settings.scoreEntryWindow,
+            parent_portal_open: settings.parentResultPortal,
+            is_active: true
+          })
+          .eq('id', existingSession.id);
+        sessionError = error;
+      } else {
+        // Insert a brand new active record for this session and term
+        const { error } = await supabaseClient
+          .from('academic_sessions')
+          .insert({
+            session_name: settings.activeSession,
+            term_name: settings.currentTerm,
+            start_date: settings.termStartDate || null,
+            end_date: settings.termEndDate || null,
+            score_entry_open: settings.scoreEntryWindow,
+            parent_portal_open: settings.parentResultPortal,
+            is_active: true
+          });
+        sessionError = error;
+      }
 
       if (sessionError) throw sessionError;
 
       await logSystemActivity('System Settings & Session Timing Updated');
       showToast('System configuration saved successfully!');
+      
+      // Refresh admin data state
+      fetchAdminData();
     } catch (err) {
       console.error('Save error:', err.message);
       showToast(err.message || 'Failed to update settings.', 'error');
