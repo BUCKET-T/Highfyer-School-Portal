@@ -1,54 +1,52 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useStaffSettingsLogic } from '../../../Backend/Staff/StaffSettingsLogic';
+
+// Shared Skeleton Loader
+import SkeletonStaffSettings from '../../Shared/Staff/SkeletonStaffSettings';
 
 const StaffSettings = () => {
-  const [activeTab, setActiveTab] = useState('profile');
-  
-  // Profile Form States
-  const [fullName, setFullName] = useState('Mr. James Doe');
-  const [email, setEmail] = useState('james.doe@highflyerkiddies.edu.ng');
-  const [phone, setPhone] = useState('+234 802 333 4444');
-  const [roleTitle, setRoleTitle] = useState('Senior Educator (Grade 1 Gold)');
-  const [avatarUrl, setAvatarUrl] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80');
+  const {
+    activeTab,
+    setActiveTab,
+    isLoading,
+    fullName,
+    setFullName,
+    email,
+    phone,
+    setPhone,
+    roleTitle,
+    setRoleTitle,
+    avatarUrl,
+    currentPassword,
+    setCurrentPassword,
+    newPassword,
+    setNewPassword,
+    confirmPassword,
+    setConfirmPassword,
+    notifEmail,
+    setNotifEmail,
+    notifPush,
+    setNotifPush,
+    showToast,
+    toastMessage,
+    triggerToast,
+    handleSaveProfile,
+    handleUpdatePassword,
+    handleAvatarUpload
+  } = useStaffSettingsLogic();
 
-  // Password States
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-
-  // Notification Toggles
-  const [notifEmail, setNotifEmail] = useState(true);
-  const [notifPush, setNotifPush] = useState(true);
-  const [notifSms, setNotifSms] = useState(false);
-
-  // Success Modal State
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-
-  const handleSave = (e) => {
-    e.preventDefault();
-    setToastMessage('Changes successfully saved and updated!');
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
-  };
-
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setAvatarUrl(imageUrl);
-      setToastMessage('Staff avatar updated successfully!');
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    }
-  };
+  // Render Skeleton Loader while fetching initial profile data
+  if (isLoading) {
+    return <SkeletonStaffSettings />;
+  }
 
   return (
     <div className="w-full min-h-screen bg-slate-50/60 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         
         {/* Top Header Bar */}
-        <div className="bg-white p-5 sm:p-8 rounded-3xl shadow-sm border border-slate-100">
+        <div className="bg-white p-5 sm:p-8 rounded-3xl shadow-sm border border-slate-100 text-left">
           <h1 className="text-xl sm:text-3xl font-black text-brand-navy tracking-tight">
             Account Settings
           </h1>
@@ -145,9 +143,9 @@ const StaffSettings = () => {
             
             {/* TAB 1: PROFILE SETTINGS */}
             {activeTab === 'profile' && (
-              <form onSubmit={handleSave} className="space-y-8">
+              <form onSubmit={handleSaveProfile} className="space-y-8 text-left">
                 
-                {/* Staff Avatar Uploader Section (Centered & Moderate for both Mobile & Desktop) */}
+                {/* Staff Avatar Uploader Section */}
                 <div className="space-y-5 border-b border-slate-100 pb-8 text-center sm:text-left">
                   <div>
                     <h2 className="text-base sm:text-lg font-black text-brand-navy">Staff Profile Picture</h2>
@@ -158,11 +156,17 @@ const StaffSettings = () => {
 
                   <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 sm:space-x-5">
                     <div className="relative inline-block">
-                      <img
-                        src={avatarUrl}
-                        alt={fullName}
-                        className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-sky-100 shadow-inner"
-                      />
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt={fullName}
+                          className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-sky-100 shadow-inner"
+                        />
+                      ) : (
+                        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 text-white font-black text-xl flex items-center justify-center border-4 border-sky-100 shadow-inner">
+                          {fullName ? fullName.split(' ').map(n => n[0]).join('').slice(0, 2) : 'ED'}
+                        </div>
+                      )}
                       <label
                         htmlFor="avatar-upload"
                         className="absolute bottom-1 right-1 w-9 h-9 bg-sky-500 hover:bg-sky-600 text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all"
@@ -177,13 +181,13 @@ const StaffSettings = () => {
                         id="avatar-upload"
                         type="file"
                         accept="image/png, image/jpeg, image/webp"
-                        onChange={handleAvatarChange}
+                        onChange={handleAvatarUpload}
                         className="hidden"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <h4 className="text-sm sm:text-base font-black text-brand-navy">{fullName}</h4>
+                      <h4 className="text-sm sm:text-base font-black text-brand-navy">{fullName || 'Educator'}</h4>
                       <p className="text-xs font-bold text-sky-600">{roleTitle}</p>
                       <p className="text-[11px] text-slate-400 font-medium max-w-xs">Click the camera icon to upload a custom image (PNG, JPG, WEBP max 300kb).</p>
                     </div>
@@ -201,7 +205,7 @@ const StaffSettings = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     
-                    <div className="space-y-1.5 text-left">
+                    <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">FULL NAME</label>
                       <input
                         type="text"
@@ -211,27 +215,28 @@ const StaffSettings = () => {
                       />
                     </div>
 
-                    <div className="space-y-1.5 text-left">
+                    <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">PORTAL EMAIL</label>
                       <input
                         type="email"
+                        disabled
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-brand-navy focus:outline-none focus:border-sky-500 transition-all shadow-inner"
+                        className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-slate-500 cursor-not-allowed shadow-inner"
                       />
                     </div>
 
-                    <div className="space-y-1.5 text-left">
+                    <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">CONTACT PHONE</label>
                       <input
                         type="text"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+234..."
                         className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-brand-navy focus:outline-none focus:border-sky-500 transition-all shadow-inner"
                       />
                     </div>
 
-                    <div className="space-y-1.5 text-left">
+                    <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">ROLE & DESIGNATION</label>
                       <input
                         type="text"
@@ -247,9 +252,10 @@ const StaffSettings = () => {
                 <div className="pt-4 flex justify-end">
                   <button
                     type="submit"
-                    className="bg-sky-500 hover:bg-sky-600 text-white font-extrabold px-6 py-3 rounded-2xl text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+                    disabled={isLoading}
+                    className="bg-sky-500 hover:bg-sky-600 text-white font-extrabold px-6 py-3 rounded-2xl text-xs sm:text-sm shadow-md transition-all cursor-pointer disabled:opacity-50"
                   >
-                    Save Changes
+                    {isLoading ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
 
@@ -258,75 +264,77 @@ const StaffSettings = () => {
 
             {/* TAB 2: NOTIFICATIONS */}
             {activeTab === 'notifications' && (
-              <form onSubmit={handleSave} className="space-y-6 text-left">
+            <div className="space-y-6 text-left">
                 <div>
                   <h2 className="text-base sm:text-lg font-black text-brand-navy">Notification Preferences</h2>
                   <p className="text-xs text-slate-500 font-medium pt-0.5">
                     Choose how you would like to receive administrative alerts and attendance reminders.
                   </p>
                 </div>
-
+            
                 <div className="space-y-4 pt-4">
-                  
+                  {/* Email Notifications Toggle */}
                   <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <div>
                       <h4 className="text-xs sm:text-sm font-extrabold text-brand-navy">Email Notifications</h4>
                       <p className="text-[11px] text-slate-500 font-medium">Receive term C.A deadline reminders and school bulletins.</p>
                     </div>
-                    <input
-                      type="checkbox"
-                      checked={notifEmail}
-                      onChange={(e) => setNotifEmail(e.target.checked)}
-                      className="w-5 h-5 accent-sky-500 rounded cursor-pointer"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setNotifEmail(!notifEmail)}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        notifEmail ? 'bg-sky-500' : 'bg-slate-300'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          notifEmail ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
                   </div>
-
+            
+                  {/* Push Notifications Toggle */}
                   <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <div>
                       <h4 className="text-xs sm:text-sm font-extrabold text-brand-navy">Push Notifications</h4>
                       <p className="text-[11px] text-slate-500 font-medium">Instant browser alerts for parent messages and homework submissions.</p>
                     </div>
-                    <input
-                      type="checkbox"
-                      checked={notifPush}
-                      onChange={(e) => setNotifPush(e.target.checked)}
-                      className="w-5 h-5 accent-sky-500 rounded cursor-pointer"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setNotifPush(!notifPush)}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        notifPush ? 'bg-sky-500' : 'bg-slate-300'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          notifPush ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
                   </div>
-
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div>
-                      <h4 className="text-xs sm:text-sm font-extrabold text-brand-navy">SMS Alerts</h4>
-                      <p className="text-[11px] text-slate-500 font-medium">Emergency announcements sent directly to your phone number.</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={notifSms}
-                      onChange={(e) => setNotifSms(e.target.checked)}
-                      className="w-5 h-5 accent-sky-500 rounded cursor-pointer"
-                    />
-                  </div>
-
                 </div>
-
+            
                 <div className="pt-4 flex justify-end">
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={() => triggerToast('Notification preferences updated successfully!')}
                     className="bg-sky-500 hover:bg-sky-600 text-white font-extrabold px-6 py-3 rounded-2xl text-xs sm:text-sm shadow-md transition-all cursor-pointer"
                   >
                     Update Preferences
                   </button>
                 </div>
-              </form>
+              </div>
             )}
 
             {/* TAB 3: PRIVACY & SECURITY */}
             {activeTab === 'security' && (
-              <form onSubmit={handleSave} className="space-y-6 text-left">
+              <form onSubmit={handleUpdatePassword} className="space-y-6 text-left">
                 <div>
                   <h2 className="text-base sm:text-lg font-black text-brand-navy">Privacy & Security</h2>
                   <p className="text-xs text-slate-500 font-medium pt-0.5">
-                    Update your staff portal password and manage active login sessions.
+                    Update your staff portal password securely via Supabase Auth.
                   </p>
                 </div>
 
@@ -346,7 +354,8 @@ const StaffSettings = () => {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">NEW PASSWORD</label>
                     <input
                       type="password"
-                      placeholder="••••••••"
+                      required
+                      placeholder="At least 6 characters"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-brand-navy focus:outline-none focus:border-sky-500 shadow-inner"
@@ -357,7 +366,8 @@ const StaffSettings = () => {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">CONFIRM NEW PASSWORD</label>
                     <input
                       type="password"
-                      placeholder="••••••••"
+                      required
+                      placeholder="Re-enter new password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-brand-navy focus:outline-none focus:border-sky-500 shadow-inner"
@@ -368,9 +378,10 @@ const StaffSettings = () => {
                 <div className="pt-4 flex justify-end">
                   <button
                     type="submit"
-                    className="bg-sky-500 hover:bg-sky-600 text-white font-extrabold px-6 py-3 rounded-2xl text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+                    disabled={isLoading}
+                    className="bg-sky-500 hover:bg-sky-600 text-white font-extrabold px-6 py-3 rounded-2xl text-xs sm:text-sm shadow-md transition-all cursor-pointer disabled:opacity-50"
                   >
-                    Change Password
+                    {isLoading ? 'Updating...' : 'Change Password'}
                   </button>
                 </div>
               </form>
@@ -420,11 +431,7 @@ const StaffSettings = () => {
                   <div className="pt-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        setToastMessage('Support ticket submitted successfully!');
-                        setShowToast(true);
-                        setTimeout(() => setShowToast(false), 3000);
-                      }}
+                      onClick={() => triggerToast('Support ticket submitted successfully!')}
                       className="bg-[#1B253B] hover:bg-slate-800 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer"
                     >
                       Submit Support Ticket
