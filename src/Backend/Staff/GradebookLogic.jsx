@@ -37,7 +37,7 @@ export const useGradebookLogic = () => {
   const [educatorClass, setEducatorClass] = useState('Grade 6');
 
   // Approval Status Tracking
-  const [approvalStatus, setApprovalStatus] = useState('Loading...');
+  const [approvalStatus, setApprovalStatus] = useState('Inputting Term 1');
   const [isApprovedOrSubmitted, setIsApprovedOrSubmitted] = useState(false);
 
   // Modals & Toast State
@@ -70,8 +70,7 @@ export const useGradebookLogic = () => {
       }
       setEducatorClass(className);
 
-      // Fetch active academic session and term from backend `academic_sessions` table[cite: 14]
-// Fetch active academic session and term from backend `academic_sessions` table
+      // Fetch active academic session and term
       const { data: activeSessionRecord, error: sessionErr } = await supabaseClient
         .from('academic_sessions')
         .select('*')
@@ -96,6 +95,8 @@ export const useGradebookLogic = () => {
         .select('*')
         .eq('class_name', className)
         .eq('subject', selectedSubject.toUpperCase())
+        .eq('term', activeTerm)
+        .eq('academic_session', activeSessionName)
         .order('submitted_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -113,7 +114,7 @@ export const useGradebookLogic = () => {
         }
       }
 
-      // Fetch all pupils assigned to this educator's class along with backend avatar_url
+      // Fetch all pupils assigned to this educator's class
       const { data: pupils, error: pupilErr } = await supabaseClient
         .from('profiles')
         .select('id, full_name, avatar_url, grade')
@@ -214,29 +215,37 @@ export const useGradebookLogic = () => {
     ? calculatedGrades.reduce((prev, current) => (prev.total > current.total ? prev : current), calculatedGrades[0])
     : null;
 
-  // Save Draft to `student_grades`
+  // 1. Save Draft to `student_grades` (Iterates and saves each row safely)
   const handleSaveDraft = async () => {
     setIsSavingDraft(true);
     try {
-      const recordsToUpsert = calculatedGrades.map(g => ({
-        ...(g.gradeRecordId ? { id: g.gradeRecordId } : {}),
-        pupil_id: g.id,
-        subject: selectedSubject.toUpperCase(),
-        term: currentTerm,
-        academic_session: academicSession,
-        ca_score: g.caScore === '' ? null : Number(g.caScore),
-        exam_score: g.examScore === '' ? null : Number(g.examScore),
-        total_score: g.total,
-        letter_grade: g.letterGrade,
-        remarks: g.remarks,
-        is_finalized: false
-      }));
+      for (const g of calculatedGrades) {
+        const payload = {
+          pupil_id: g.id,
+          subject: selectedSubject.toUpperCase(),
+          term: currentTerm,
+          academic_session: academicSession,
+          ca_score: g.caScore === '' ? null : Number(g.caScore),
+          exam_score: g.examScore === '' ? null : Number(g.examScore),
+          remarks: g.remarks,
+          is_finalized: false
+        };
 
-      const { error } = await supabaseClient
-        .from('student_grades')
-        .upsert(recordsToUpsert, { onConflict: 'pupil_id, subject, term, academic_session' });
-
-      if (error) throw error;
+        if (g.gradeRecordId) {
+          const { error } = await supabaseClient
+            .from('student_grades')
+            .update(payload)
+            .eq('id', g.gradeRecordId);
+          if (error) throw error;
+        } else {
+          const { data, error } = await supabaseClient
+            .from('student_grades')
+            .insert([payload])
+            .select();
+          if (error) throw error;
+          if (data && data[0]) g.gradeRecordId = data[0].id;
+        }
+      }
 
       setShowDraftModal(true);
       await fetchGradebookData(true);
@@ -248,51 +257,63 @@ export const useGradebookLogic = () => {
     }
   };
 
-  // Finalize & Submit to `academic_approvals`
+  // 2. Finalize & Submit to `academic_approvals`
   const handleFinalizeGrades = async () => {
     setIsFinalizing(true);
     try {
       const { data: { user } } = await supabaseClient.auth.getUser();
 
-      const recordsToUpsert = calculatedGrades.map(g => ({
-        ...(g.gradeRecordId ? { id: g.gradeRecordId } : {}),
-        pupil_id: g.id,
-        subject: selectedSubject.toUpperCase(),
-        term: currentTerm,
-        academic_session: academicSession,
-        ca_score: g.caScore === '' ? 0 : Number(g.caScore),
-        exam_score: g.examScore === '' ? 0 : Number(g.examScore),
-        total_score: g.total,
-        letter_grade: g.letterGrade,
-        remarks: g.remarks,
-        is_finalized: true
-      }));
+      // Save/Update grades as finalized
+      for (const g of calculatedGrades) {
+        const payload = {
+          pupil_id: g.id,
+          subject: selectedSubject.toUpperCase(),
+          term: currentTerm,
+          academic_session: academicSession,
+          ca_score: g.caScore === '' ? 0 : Number(g.caScore),
+          exam_score: g.examScore === '' ? 0 : Number(g.examScore),
+          remarks: g.remarks,
+          is_finalized: true
+        };
 
-      const { error: gradesError } = await supabaseClient
-        .from('student_grades')
-        .upsert(recordsToUpsert, { onConflict: 'pupil_id, subject, term, academic_session' });
+        if (g.gradeRecordId) {
+          const { error } = await supabaseClient
+            .from('student_grades')
+            .update(payload)
+            .eq('id', g.gradeRecordId);
+          if (error) throw error;
+        } else {
+          const { data, error } = await supabaseClient
+            .from('student_grades')
+            .insert([payload])
+            .select();
+          if (error) throw error;
+          if (data && data[0]) g.gradeRecordId = data[0].id;
+        }
+      }
 
-      if (gradesError) throw gradesError;
-
+      // Insert approval request
       const approvalPayload = {
         educator_id: user?.id || null,
         class_name: educatorClass,
         subject: selectedSubject.toUpperCase(),
         status: 'PENDING',
+        term: currentTerm,
+        academic_session: academicSession,
         submitted_at: new Date().toISOString()
       };
 
       const { error: approvalError } = await supabaseClient
         .from('academic_approvals')
-        .upsert([approvalPayload], { onConflict: 'class_name, subject' });
+        .insert([approvalPayload]);
 
-      if (approvalError) throw approvalError;
+      if (approvalError) throw new Error(`Approval Error: ${approvalError.message}`);
 
       setShowFinalizeModal(true);
       await fetchGradebookData(true);
     } catch (err) {
       console.error('Error finalizing grades:', err.message);
-      triggerToast(`Error finalizing grades: ${err.message}`);
+      triggerToast(err.message);
     } finally {
       setIsFinalizing(false);
     }
