@@ -165,7 +165,7 @@ const Gradebook = () => {
             )}
           </div>
 
-{/* Status & Finalize Card */}
+       {/* Status & Finalize Card */}
         <div className="bg-[#1B253B] text-white p-6 rounded-3xl shadow-md flex items-center justify-between">
           <div className="space-y-1">
             {/* Dynamically displays the active term in the status title */}
