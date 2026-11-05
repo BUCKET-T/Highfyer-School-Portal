@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAssignmentsLogic } from '../../../Backend/Staff/AssignmentsLogic';
+import SkeletonAssignments from '../../Shared/Staff/SkeletonAssignments';
 
 const ManageAssignments = () => {
   const {
@@ -11,19 +12,12 @@ const ManageAssignments = () => {
     setSearchQuery,
     selectedStatusFilter,
     setSelectedStatusFilter,
-    setShowSubjectDropdown,
     showStatusDropdown,
     setShowStatusDropdown,
-    curriculumSubjects,
     statusOptions,
+    curriculumSubjects,
     showCreateModal,
     setShowCreateModal,
-    showReviewModal,
-    setShowReviewModal,
-    activeReviewTask,
-    handleOpenReview,
-    taskSubmissions,
-    isLoadingSubmissions,
     newTaskTitle,
     setNewTaskTitle,
     newTaskSubject,
@@ -35,27 +29,28 @@ const ManageAssignments = () => {
     newTaskGuidelines,
     setNewTaskGuidelines,
     handleCreateTask,
-    handleGradeSubmission,
     activeTasksCount,
-    gradingQueueCount,
     completedTasksCount,
     showToast,
     toastMessage
   } = useAssignmentsLogic();
 
-  // Close dropdowns on outside click
   const dropdownRef = useRef(null);
+  
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowSubjectDropdown(false);
         setShowStatusDropdown(false);
         setShowNewTaskSubjectDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [setShowSubjectDropdown, setShowStatusDropdown, setShowNewTaskSubjectDropdown]);
+  }, [setShowStatusDropdown, setShowNewTaskSubjectDropdown]);
+
+  if (isLoading) {
+    return <SkeletonAssignments />;
+  }
 
   return (
     <div className="w-full min-h-screen bg-slate-50/60 p-4 sm:p-6 lg:p-8" ref={dropdownRef}>
@@ -68,7 +63,7 @@ const ManageAssignments = () => {
               Assignment Hub
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 font-medium pt-1">
-              Create, review, and grade homework tasks.
+              Publish homework tasks for manual in-person submissions.
             </p>
           </div>
 
@@ -84,10 +79,8 @@ const ManageAssignments = () => {
           </button>
         </div>
 
-{/* Search & Custom Web UI Filters Toolbar */}
+        {/* Search & Filters Toolbar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          
-          {/* Search Bar */}
           <div className="relative w-full sm:w-96">
             <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -103,16 +96,11 @@ const ManageAssignments = () => {
             />
           </div>
 
-          {/* Status Filter Only */}
           <div className="flex items-center space-x-3 w-full sm:w-auto justify-end">
-            
-            {/* Status Filter Dropdown */}
             <div className="relative w-36 sm:w-40">
               <button
                 type="button"
-                onClick={() => {
-                  setShowStatusDropdown(!showStatusDropdown);
-                }}
+                onClick={() => setShowStatusDropdown(!showStatusDropdown)}
                 className="w-full bg-white border border-slate-200 hover:border-slate-300 rounded-2xl px-4 py-3 text-xs sm:text-sm font-extrabold text-brand-navy flex items-center justify-between transition-all cursor-pointer shadow-sm"
               >
                 <span className="truncate">{selectedStatusFilter}</span>
@@ -149,160 +137,70 @@ const ManageAssignments = () => {
                 )}
               </AnimatePresence>
             </div>
-
           </div>
         </div>
 
-
-        {/* Dynamic Metric Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-left">
+        {/* Metric Cards Grid (2 Cards now: Active Tasks & Completed Archives) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-left">
           
-          {/* Active Tasks Card */}
           <div className="bg-[#2B6CB0] text-white p-6 rounded-3xl shadow-md space-y-3 relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-200">ACTIVE TASKS</span>
-              <svg className="w-5 h-5 text-sky-300 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <h2 className="text-4xl font-black">{isLoading ? '...' : activeTasksCount}</h2>
-            <p className="text-xs font-semibold text-sky-100 flex items-center space-x-1 cursor-pointer hover:underline">
-              <span>View active submissions</span>
-              <span>↗</span>
-            </p>
+            <svg className="absolute -right-4 -bottom-6 w-36 h-36 text-white/10 pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-200">ACTIVE TASKS</span>
+            <h2 className="text-4xl font-black">{activeTasksCount}</h2>
+            <p className="text-xs font-semibold text-sky-100">Students submit in person</p>
           </div>
 
-          {/* Grading Queue Card */}
-          <div className="bg-[#ED64A6] text-white p-6 rounded-3xl shadow-md space-y-3 relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-pink-100">GRADING QUEUE</span>
-              <svg className="w-5 h-5 text-pink-200 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h2 className="text-4xl font-black">{isLoading ? '...' : gradingQueueCount}</h2>
-            <p className="text-xs font-semibold text-pink-100 flex items-center space-x-1 cursor-pointer hover:underline">
-              <span>Start grading session</span>
-              <span>↗</span>
-            </p>
-          </div>
-
-          {/* Completed Card */}
           <div className="bg-[#1A202C] text-white p-6 rounded-3xl shadow-md space-y-3 relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">COMPLETED</span>
-              <svg className="w-5 h-5 text-emerald-400 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="text-4xl font-black">{isLoading ? '...' : completedTasksCount}</h2>
-            <p className="text-xs font-semibold text-slate-300 flex items-center space-x-1 cursor-pointer hover:underline">
-              <span>View archives</span>
-              <span>↗</span>
-            </p>
+            <svg className="absolute -right-4 -bottom-6 w-36 h-36 text-white/10 pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">COMPLETED / ARCHIVED</span>
+            <h2 className="text-4xl font-black">{completedTasksCount}</h2>
+            <p className="text-xs font-semibold text-slate-300">Past homework assignments</p>
           </div>
 
         </div>
 
         {/* Recent Assignments List Section */}
         <div className="space-y-4 text-left">
-          <h2 className="text-lg sm:text-xl font-black text-brand-navy">Recent Assignments</h2>
+          <h2 className="text-lg sm:text-xl font-black text-brand-navy">Published Tasks</h2>
 
-          {isLoading ? (
-            /* Skeleton Loading State */
-            <div className="space-y-4">
-              {[1, 2, 3].map((n) => (
-                <div key={n} className="bg-white p-6 rounded-3xl border border-slate-100 animate-pulse flex flex-col md:flex-row justify-between items-center gap-4">
-                  <div className="space-y-3 flex-1 w-full">
-                    <div className="h-4 bg-slate-200 rounded w-24"></div>
-                    <div className="h-6 bg-slate-200 rounded w-2/3"></div>
-                    <div className="h-4 bg-slate-200 rounded w-1/3"></div>
-                  </div>
-                  <div className="h-4 bg-slate-200 rounded w-full md:w-48"></div>
-                  <div className="h-10 bg-slate-200 rounded-xl w-24"></div>
-                </div>
-              ))}
-            </div>
-          ) : filteredAssignments.length === 0 ? (
-            /* Empty State */
+          {filteredAssignments.length === 0 ? (
             <div className="bg-white p-12 rounded-3xl border border-slate-100 text-center space-y-3">
-              <p className="text-sm font-extrabold text-slate-400">No homework assignments found.</p>
-              <p className="text-xs font-medium text-slate-400">Click "Create New Task" above to publish your first homework activity.</p>
+              <p className="text-sm font-extrabold text-slate-400">No homework tasks found.</p>
+              <p className="text-xs font-medium text-slate-400">Click "Create New Task" above to publish assignments for manual collection.</p>
             </div>
           ) : (
-            /* Dynamic Assignments Cards */
             <div className="space-y-4">
-              {filteredAssignments.map((item) => {
-                const progressPct = item.totalCount > 0 ? Math.round((item.submittedCount / item.totalCount) * 100) : 0;
-
-                return (
-                  <div
-                    key={item.id}
-                    className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-5 transition-all hover:border-slate-200"
-                  >
-                    {/* Left Details */}
-                    <div className="space-y-2 flex-1 min-w-0">
+              {filteredAssignments.map((item) => (
+                <div key={item.id} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-1">
                       <div className="flex items-center space-x-2">
-                        <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black ${item.subjectTagColor}`}>
-                          {item.subject}
-                        </span>
-                        <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black ${item.statusTagColor}`}>
-                          {item.status}
-                        </span>
+                        <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black ${item.subjectTagColor}`}>{item.subject}</span>
+                        <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black ${item.statusTagColor}`}>{item.status}</span>
                       </div>
-
-                      <h3 className="text-base sm:text-lg font-black text-brand-navy truncate">
-                        {item.title}
-                      </h3>
-
-                      <div className="flex items-center space-x-4 text-[11px] font-bold text-slate-400">
-                        <span className="flex items-center space-x-1">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                          <span>{item.createdText}</span>
-                        </span>
-                        <span className="flex items-center space-x-1 text-rose-500">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                          <span>{item.dueText}</span>
-                        </span>
-                      </div>
+                      <h3 className="text-base sm:text-lg font-black text-brand-navy">{item.title}</h3>
                     </div>
-
-                    {/* Middle Submissions Progress */}
-                    <div className="w-full md:w-64 space-y-1.5 flex-shrink-0">
-                      <div className="flex justify-between text-[11px] font-extrabold text-slate-400">
-                        <span>SUBMISSIONS</span>
-                        <span>{item.submittedCount}/{item.totalCount}</span>
-                      </div>
-                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div
-                          className="bg-sky-500 h-full rounded-full transition-all duration-500"
-                          style={{ width: `${progressPct}%` }}
-                        />
-                      </div>
+                    <div className="text-right">
+                      <span className="text-[11px] font-extrabold text-rose-500 block">{item.dueText}</span>
+                      <span className="text-[10px] font-bold text-slate-400">{item.createdText}</span>
                     </div>
-
-                    {/* Right Actions */}
-                    <div className="flex items-center space-x-3 self-end md:self-center flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenReview(item)}
-                        className="bg-white hover:bg-slate-50 text-brand-navy border border-slate-200 font-extrabold px-5 py-2.5 rounded-xl text-xs shadow-sm transition-all cursor-pointer"
-                      >
-                        Review
-                      </button>
-                      
-                      <button
-                        type="button"
-                        className="w-9 h-9 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all cursor-pointer"
-                        title="More Options"
-                      >
-                        •••
-                      </button>
-                    </div>
-
                   </div>
-                );
-              })}
+
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">Guidelines & Instructions:</span>
+                    <p className="text-xs font-medium text-slate-700 whitespace-pre-wrap">{item.guidelines}</p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <span className="text-[11px] font-extrabold text-slate-500">Mode: In-Person Submission</span>
+                    <span className="text-[11px] font-bold text-sky-600 bg-sky-50 px-3 py-1 rounded-xl">Collect physically from students</span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -317,7 +215,7 @@ const ManageAssignments = () => {
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="relative bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-100 z-10 space-y-6">
               
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <h3 className="text-lg font-black text-brand-navy">Create New Homework Task</h3>
+                <h3 className="text-lg font-black text-brand-navy">Publish Homework Task</h3>
                 <button type="button" onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
               </div>
 
@@ -335,14 +233,12 @@ const ManageAssignments = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  
-                  {/* Subject Selection Dropdown */}
                   <div className="space-y-1.5 text-left relative">
                     <label className="text-xs font-black text-slate-600 uppercase">Subject</label>
                     <button
                       type="button"
                       onClick={() => setShowNewTaskSubjectDropdown(!showNewTaskSubjectDropdown)}
-                      className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-2xl px-4 py-3 text-xs font-extrabold text-brand-navy flex items-center justify-between transition-all cursor-pointer shadow-sm"
+                      className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-2xl px-4 py-3 text-xs font-extrabold text-brand-navy flex items-center justify-between cursor-pointer"
                     >
                       <span>{newTaskSubject}</span>
                       <svg className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${showNewTaskSubjectDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
@@ -356,7 +252,6 @@ const ManageAssignments = () => {
                           initial={{ opacity: 0, y: 8, scale: 0.95 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                          transition={{ duration: 0.15 }}
                           className="absolute left-0 mt-2 w-full bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-50 flex flex-col space-y-1 max-h-48 overflow-y-auto"
                         >
                           {curriculumSubjects.map((sub) => (
@@ -403,15 +298,17 @@ const ManageAssignments = () => {
                 </div>
 
                 <div className="pt-2 flex items-center justify-end space-x-3">
-                  <button type="button" onClick={() => setShowCreateModal(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold px-5 py-3 rounded-2xl text-xs transition-all cursor-pointer">
+                  <button type="button" onClick={() => setShowCreateModal(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold px-5 py-3 rounded-2xl text-xs cursor-pointer">
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="bg-sky-500 hover:bg-sky-600 text-white font-extrabold px-6 py-3 rounded-2xl text-xs shadow-md transition-all cursor-pointer disabled:opacity-50 flex items-center space-x-2"
-                  >
-                    {isSubmitting ? 'Publishing...' : 'Publish Task'}
+                  <button type="submit" disabled={isSubmitting} className="bg-sky-500 hover:bg-sky-600 text-white font-extrabold px-6 py-3 rounded-2xl text-xs shadow-md cursor-pointer disabled:opacity-50 flex items-center space-x-2">
+                    {isSubmitting && (
+                      <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                      </svg>
+                    )}
+                    <span>{isSubmitting ? 'Publishing...' : 'Publish Task'}</span>
                   </button>
                 </div>
               </form>
@@ -421,90 +318,7 @@ const ManageAssignments = () => {
         )}
       </AnimatePresence>
 
-      {/* Review Submissions Modal */}
-      <AnimatePresence>
-        {showReviewModal && activeReviewTask && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowReviewModal(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="relative bg-white rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl border border-slate-100 z-10 space-y-6 text-left">
-              
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div>
-                  <span className="text-[10px] font-black text-sky-600 bg-sky-50 px-2.5 py-0.5 rounded-md">{activeReviewTask.subject}</span>
-                  <h3 className="text-lg font-black text-brand-navy pt-1">{activeReviewTask.title}</h3>
-                </div>
-                <button type="button" onClick={() => setShowReviewModal(false)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Guidelines & Instructions</h4>
-                <p className="text-xs font-medium text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  {activeReviewTask.guidelines}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Submissions Overview</h4>
-                  <span className="text-xs font-extrabold text-sky-600">{activeReviewTask.submittedCount} of {activeReviewTask.totalCount} Submitted</span>
-                </div>
-
-                {isLoadingSubmissions ? (
-                  <div className="p-8 text-center text-xs font-extrabold text-slate-400">Loading student submissions...</div>
-                ) : taskSubmissions.length === 0 ? (
-                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 text-center text-xs font-extrabold text-slate-400">
-                    No pupil submissions turned in yet.
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    {taskSubmissions.map((sub) => (
-                      <div key={sub.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                        <div className="flex items-center space-x-3">
-                          {sub.avatar ? (
-                            <img src={sub.avatar} alt={sub.name} className="w-8 h-8 rounded-full object-cover" />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-sky-500 text-white font-black text-xs flex items-center justify-center">
-                              {sub.name.substring(0, 2).toUpperCase()}
-                            </div>
-                          )}
-                          <div>
-                            <span className="text-xs font-extrabold text-brand-navy block">{sub.name}</span>
-                            <span className="text-[10px] text-slate-400 font-medium">{sub.submissionText}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-3">
-                          <span className="text-[10px] font-bold text-slate-500">{sub.status}</span>
-                          <input
-                            type="number"
-                            max="10"
-                            min="0"
-                            placeholder="Score"
-                            defaultValue={sub.score}
-                            onBlur={(e) => e.target.value && handleGradeSubmission(sub.id, e.target.value)}
-                            className="w-14 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-black text-sky-600 text-center focus:outline-none focus:border-sky-500"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowReviewModal(false)}
-                className="w-full bg-sky-500 hover:bg-sky-600 text-white font-extrabold py-3 rounded-2xl text-xs shadow-md transition-all cursor-pointer"
-              >
-                Close Review
-              </button>
-
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Success Toast Notification Alert */}
+      {/* Toast Notification Alert */}
       <AnimatePresence>
         {showToast && (
           <motion.div
