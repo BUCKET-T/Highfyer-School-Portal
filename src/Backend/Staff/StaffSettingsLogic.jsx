@@ -31,8 +31,27 @@ export const useStaffSettingsLogic = () => {
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  // Fetch logged-in staff profile with robust fallback matching your profiles table schema
-const fetchStaffProfile = useCallback(async () => {
+  // Central Log Activity Function matching system_activity_logs schema exactly
+  const logSystemActivity = async (actionText, statusText = 'Success') => {
+    try {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      
+      await supabaseClient.from('system_activity_logs').insert([
+        {
+          user_id: user ? user.id : null,
+          action: actionText,
+          ip_address: '197.210.54.12',
+          status: statusText,
+          created_at: new Date().toISOString()
+        }
+      ]);
+    } catch (err) {
+      console.warn('Failed to record system activity log:', err.message);
+    }
+  };
+
+  // Fetch logged-in staff profile with robust fallback matching profiles table schema
+  const fetchStaffProfile = useCallback(async () => {
     setIsLoading(true);
     try {
       // 1. Fetch user auth email & database profile row
@@ -62,7 +81,7 @@ const fetchStaffProfile = useCallback(async () => {
         }
       }
 
-      // 2. Populate all form states FIRST
+      // 2. Populate form states FIRST
       if (profileData) {
         setFullName(profileData.full_name || '');
         setPhone(profileData.phone || '');
@@ -72,7 +91,6 @@ const fetchStaffProfile = useCallback(async () => {
     } catch (err) {
       console.error('Error fetching staff profile:', err.message);
     } finally {
-      // 3. ONLY turn off loading once ALL states are set!
       setIsLoading(false);
     }
   }, []);
@@ -81,7 +99,7 @@ const fetchStaffProfile = useCallback(async () => {
     fetchStaffProfile();
   }, [fetchStaffProfile]);
 
-  // Handle Profile Save
+  // Handle Profile Save & Log Activity
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -102,16 +120,21 @@ const fetchStaffProfile = useCallback(async () => {
         .eq('id', targetId);
 
       if (error) throw error;
+
+      // Log action for Admin Dashboard
+      await logSystemActivity(`Staff Profile Updated: ${fullName || email}`);
+
       triggerToast('Educator profile successfully updated in database!');
     } catch (err) {
       console.error('Error updating profile:', err.message);
+      await logSystemActivity(`Staff Profile Update Failed: ${fullName || email}`, 'Failed');
       triggerToast('Failed to update profile. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle Password Update via Supabase Auth
+  // Handle Password Update via Supabase Auth & Log Activity
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
@@ -130,19 +153,24 @@ const fetchStaffProfile = useCallback(async () => {
       });
 
       if (error) throw error;
+
+      // Log action for Admin Dashboard
+      await logSystemActivity(`Staff Password Changed: ${fullName || email}`);
+
       triggerToast('Password successfully updated!');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
       console.error('Password update error:', err.message);
+      await logSystemActivity(`Staff Password Change Failed: ${fullName || email}`, 'Failed');
       triggerToast(err.message || 'Failed to update password.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle Avatar Upload
+  // Handle Avatar Upload & Log Activity
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -165,9 +193,13 @@ const fetchStaffProfile = useCallback(async () => {
         .update({ avatar_url: localUrl })
         .eq('id', targetId);
 
+      // Log action for Admin Dashboard
+      await logSystemActivity(`Staff Avatar Updated: ${fullName || email}`);
+
       triggerToast('Staff avatar updated successfully!');
     } catch (err) {
       console.error('Avatar upload error:', err.message);
+      await logSystemActivity(`Staff Avatar Upload Failed: ${fullName || email}`, 'Failed');
       triggerToast('Avatar upload failed.');
     } finally {
       setIsLoading(false);
@@ -202,6 +234,7 @@ const fetchStaffProfile = useCallback(async () => {
     triggerToast,
     handleSaveProfile,
     handleUpdatePassword,
-    handleAvatarUpload
+    handleAvatarUpload,
+    logSystemActivity
   };
 };

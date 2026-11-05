@@ -56,7 +56,7 @@ export const useUserManagementLogic = () => {
     }
   };
 
-  // Form States including Avatar File (Max 30KB validation)
+  // Form States including Avatar File (Max 45KB validation)
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -109,6 +109,7 @@ export const useUserManagementLogic = () => {
           email: u.email || 'No email provided',
           roleType: u.role === 'pupil' ? 'Pupil' : 'Staff',
           roleTitle: u.role_title || (u.role === 'pupil' ? 'GRADE 1' : 'STAFF'),
+          grade: u.grade || u.role_title || 'N/A', // Mapped explicit grade column
           status: u.is_active !== false ? 'Active' : 'Inactive',
           lastActivity: 'RECENT',
           avatarBg: u.role === 'pupil' ? 'from-pink-400 to-rose-500' : 'from-sky-400 to-indigo-500',
@@ -190,7 +191,7 @@ export const useUserManagementLogic = () => {
     }
   };
 
-  // Linter-friendly UUID generator with proper operator parentheses and strict equality
+  // UUID generator
   const generateId = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       const r = Math.floor(Math.random() * 16);
@@ -199,7 +200,7 @@ export const useUserManagementLogic = () => {
     });
   };
 
-  // Handle Form Submit for New User Onboarding
+  // Handle Form Submit for New User Onboarding with explicit `grade` column write
   const handleCreateUser = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -224,7 +225,6 @@ export const useUserManagementLogic = () => {
 
       if (formData.email && formData.email.includes('@')) {
         try {
-          // Unused error variable omitted to resolve eslint warnings
           const { data: authData } = await supabaseClient.auth.signUp({
             email: formData.email,
             password: tempPassword,
@@ -250,6 +250,11 @@ export const useUserManagementLogic = () => {
         ? selectedGrade.toUpperCase() 
         : (classesString ? `${selectedStaffRole.toUpperCase()} (${classesString})` : selectedStaffRole.toUpperCase());
 
+      // Format clean explicit grade value for the new column (e.g. "GRADE 6" or "GRADE 1")
+      const explicitGrade = newUserType === 'pupil'
+        ? selectedGrade.toUpperCase()
+        : classesString;
+
       const finalUserId = authUserId || generateId();
 
       const newDbRecord = {
@@ -258,6 +263,7 @@ export const useUserManagementLogic = () => {
         email: formData.email,
         role: newUserType === 'pupil' ? 'pupil' : 'educator',
         role_title: computedRoleTitle,
+        grade: explicitGrade, // Explicitly writing to the newly created database column
         phone: formData.phone || '',
         parent_guardian: newUserType === 'pupil' ? formData.parentName : 'N/A',
         home_address: formData.homeAddress || 'Not Provided',

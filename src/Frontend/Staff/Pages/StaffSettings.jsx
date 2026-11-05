@@ -11,12 +11,9 @@ const StaffSettings = () => {
     setActiveTab,
     isLoading,
     fullName,
-    setFullName,
     email,
     phone,
-    setPhone,
     roleTitle,
-    setRoleTitle,
     avatarUrl,
     currentPassword,
     setCurrentPassword,
@@ -31,7 +28,6 @@ const StaffSettings = () => {
     showToast,
     toastMessage,
     triggerToast,
-    handleSaveProfile,
     handleUpdatePassword,
     handleAvatarUpload
   } = useStaffSettingsLogic();
@@ -143,7 +139,7 @@ const StaffSettings = () => {
             
             {/* TAB 1: PROFILE SETTINGS */}
             {activeTab === 'profile' && (
-              <form onSubmit={handleSaveProfile} className="space-y-8 text-left">
+              <div className="space-y-8 text-left">
                 
                 {/* Staff Avatar Uploader Section */}
                 <div className="space-y-5 border-b border-slate-100 pb-8 text-center sm:text-left">
@@ -194,12 +190,12 @@ const StaffSettings = () => {
                   </div>
                 </div>
 
-                {/* Personal Details Form Section */}
+                {/* Personal Details Form Section (Read-Only) */}
                 <div className="space-y-5">
                   <div>
                     <h3 className="text-base sm:text-lg font-black text-brand-navy">Personal Details</h3>
                     <p className="text-xs text-slate-500 font-medium pt-0.5">
-                      Update your educator credentials and contact phone.
+                      View your educator credentials and contact information.
                     </p>
                   </div>
 
@@ -209,9 +205,9 @@ const StaffSettings = () => {
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">FULL NAME</label>
                       <input
                         type="text"
+                        disabled
                         value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-brand-navy focus:outline-none focus:border-sky-500 transition-all shadow-inner"
+                        className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-slate-500 cursor-not-allowed shadow-inner"
                       />
                     </div>
 
@@ -229,10 +225,9 @@ const StaffSettings = () => {
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">CONTACT PHONE</label>
                       <input
                         type="text"
+                        disabled
                         value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+234..."
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-brand-navy focus:outline-none focus:border-sky-500 transition-all shadow-inner"
+                        className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-slate-500 cursor-not-allowed shadow-inner"
                       />
                     </div>
 
@@ -240,26 +235,16 @@ const StaffSettings = () => {
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">ROLE & DESIGNATION</label>
                       <input
                         type="text"
+                        disabled
                         value={roleTitle}
-                        onChange={(e) => setRoleTitle(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-brand-navy focus:outline-none focus:border-sky-500 transition-all shadow-inner"
+                        className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-slate-500 cursor-not-allowed shadow-inner"
                       />
                     </div>
 
                   </div>
                 </div>
 
-                <div className="pt-4 flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="bg-sky-500 hover:bg-sky-600 text-white font-extrabold px-6 py-3 rounded-2xl text-xs sm:text-sm shadow-md transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    {isLoading ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </div>
-
-              </form>
+              </div>
             )}
 
             {/* TAB 2: NOTIFICATIONS */}
