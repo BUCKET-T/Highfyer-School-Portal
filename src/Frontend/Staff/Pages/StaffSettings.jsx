@@ -189,7 +189,7 @@ const StaffSettings = () => {
                     <div className="space-y-1">
                       <h4 className="text-sm sm:text-base font-black text-brand-navy">{fullName || 'Educator'}</h4>
                       <p className="text-xs font-bold text-sky-600">{roleTitle}</p>
-                      <p className="text-[11px] text-slate-400 font-medium max-w-xs">Click the camera icon to upload a custom image (PNG, JPG, WEBP max 300kb).</p>
+                      <p className="text-[11px] text-slate-400 font-medium max-w-xs">Click the camera icon to upload a custom image (PNG, JPG, WEBP max 45kb).</p>
                     </div>
                   </div>
                 </div>

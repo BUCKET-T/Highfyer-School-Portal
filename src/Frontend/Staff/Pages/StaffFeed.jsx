@@ -1,107 +1,30 @@
-import React, { useState } from 'react';
-
-const initialAnnouncements = [
-  {
-    id: 1,
-    author: 'Principal Olatunji',
-    role: 'SCHOOL PRINCIPAL',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    timeAgo: '2 HOURS AGO',
-    badgeText: 'URGENT',
-    badgeColor: 'bg-rose-100 text-rose-700 border-rose-200',
-    title: 'Mid-Term Break Update',
-    content: 'Please note that the mid-term break has been moved to start on Wednesday, May 22nd. Ensure all grading is uploaded by Tuesday EOD.',
-    acknowledgedCount: 24,
-    commentsCount: 3,
-    category: 'urgent',
-  },
-  {
-    id: 2,
-    author: 'Admin Office',
-    role: 'OPERATIONS',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    timeAgo: 'YESTERDAY',
-    badgeText: 'POLICY',
-    badgeColor: 'bg-sky-100 text-sky-700 border-sky-200',
-    title: 'New Digital Learning Policy',
-    content: 'Attached is the new directive for digital screen time in Grade 1–3. Please review and incorporate into your lesson plans.',
-    acknowledgedCount: 24,
-    commentsCount: 3,
-    category: 'policy',
-  },
-  {
-    id: 3,
-    author: 'Sports Committee',
-    role: 'EXTRACURRICULAR',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    timeAgo: '3 DAYS AGO',
-    badgeText: 'SOCIAL',
-    badgeColor: 'bg-purple-100 text-purple-700 border-purple-200',
-    title: 'Annual Inter-House Sports Briefing',
-    content: 'All class teachers are required to submit their house colour registrations by Thursday afternoon for team allocation.',
-    acknowledgedCount: 30,
-    commentsCount: 5,
-    category: 'social',
-  },
-];
-
-const upcomingMeetings = [
-  {
-    title: 'Departmental Sync',
-    time: '10:00 AM TODAY',
-    location: 'BOARDROOM A',
-  },
-  {
-    title: 'PTA Preparation',
-    time: '02:30 PM TOMORROW',
-    location: 'LIBRARY',
-  },
-];
+import React from 'react';
+import { useStaffFeedLogic } from '../../../Backend/Staff/StaffFeedLogic';
+import SkeletonStaffFeed from '../../Shared/Staff/SkeletonStaffFeed';
 
 const StaffFeed = () => {
-  const [announcements, setAnnouncements] = useState(initialAnnouncements);
-  const [activeFilter, setActiveFilter] = useState('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [acknowledgedPosts, setAcknowledgedPosts] = useState({});
+  const {
+    upcomingMeetings,
+    isLoading,
+    activeFilter,
+    setActiveFilter,
+    searchQuery,
+    setSearchQuery,
+    acknowledgedPosts,
+    filteredAnnouncements,
+    handleAcknowledge
+  } = useStaffFeedLogic();
 
-  // Filter & Search announcements logic
-  const filteredAnnouncements = announcements.filter((item) => {
-    const matchesCategory =
-      activeFilter === 'ALL' ||
-      (activeFilter === 'URGENT' && item.category === 'urgent') ||
-      (activeFilter === 'SOCIAL' && item.category === 'social');
-
-    const matchesSearch =
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.author.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return matchesCategory && matchesSearch;
-  });
-
-  const handleAcknowledge = (id) => {
-    setAcknowledgedPosts(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-    setAnnouncements(prev => prev.map(item => {
-      if (item.id === id) {
-        const isAck = acknowledgedPosts[id];
-        return {
-          ...item,
-          acknowledgedCount: isAck ? item.acknowledgedCount - 1 : item.acknowledgedCount + 1
-        };
-      }
-      return item;
-    }));
-  };
+  if (isLoading) {
+    return <SkeletonStaffFeed />;
+  }
 
   return (
     <div className="w-full min-h-screen bg-slate-50/60 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         
         {/* Top Header Bar with Integrated Search Input */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 sm:p-8 rounded-3xl shadow-sm border border-slate-100">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 sm:p-8 rounded-3xl shadow-sm border border-slate-100 text-left">
           <div>
             <h1 className="text-xl sm:text-3xl font-black text-brand-navy tracking-tight">
               Staff Feed
@@ -132,7 +55,7 @@ const StaffFeed = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Left Column: Feed & Announcements (8 cols) */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="lg:col-span-8 space-y-6 text-left">
             
             {/* Filter Tabs Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -189,6 +112,9 @@ const StaffFeed = () => {
                         <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black border ${item.badgeColor}`}>
                           {item.badgeText}
                         </span>
+                        <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 text-slate-600">
+                          Target: {item.targetAudience}
+                        </span>
                       </div>
                       <h3 className="text-base sm:text-lg font-black text-brand-navy">
                         {item.title}
@@ -235,7 +161,7 @@ const StaffFeed = () => {
           </div>
 
           {/* Right Column: Upcoming Meetings (4 cols) */}
-          <div className="lg:col-span-4 space-y-6">
+          <div className="lg:col-span-4 space-y-6 text-left">
             
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-5">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">

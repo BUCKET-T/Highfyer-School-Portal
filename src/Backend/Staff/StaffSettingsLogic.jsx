@@ -88,7 +88,7 @@ const fetchStaffProfile = useCallback(async () => {
 
     try {
       const { data: { user } } = await supabaseClient.auth.getUser();
-      const targetId = user ? user.id : '2bofd2f5-1b06-41a1-a354-fa771785a7';
+      const targetId = user ? user.id : '';
 
       const { error } = await supabaseClient
         .from('profiles')
@@ -147,8 +147,8 @@ const fetchStaffProfile = useCallback(async () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 300 * 1024) {
-      triggerToast('Image size exceeds 300kb limit.');
+    if (file.size > 45 * 1024) {
+      triggerToast('Image size exceeds 45kb limit.');
       return;
     }
 
@@ -158,7 +158,7 @@ const fetchStaffProfile = useCallback(async () => {
       setAvatarUrl(localUrl);
 
       const { data: { user } } = await supabaseClient.auth.getUser();
-      const targetId = user ? user.id : '2bofd2f5-1b06-41a1-a354-fa771785a7';
+      const targetId = user ? user.id : '';
 
       await supabaseClient
         .from('profiles')
