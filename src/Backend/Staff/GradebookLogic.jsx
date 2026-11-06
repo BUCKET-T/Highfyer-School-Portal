@@ -12,22 +12,10 @@ export const useGradebookLogic = () => {
   const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
   
   const curriculumSubjects = [
-    'Numeracy',
-    'Literacy',
-    'Rhymes',
-    'General Paper',
-    'CRS',
-    'Mathematics',
-    'English language',
-    'Basic science',
-    'Social studies',
-    'History',
-    'Yoruba',
-    'Creative & Cultural Arts',
-    'Vocational Studies',
-    'Security Education',
-    'Quantitative Reasoning',
-    'Verbal Reasoning',
+    'Numeracy', 'Literacy', 'Rhymes', 'General Paper', 'CRS',
+    'Mathematics', 'English language', 'Basic science', 'Social studies',
+    'History', 'Yoruba', 'Creative & Cultural Arts', 'Vocational Studies',
+    'Security Education', 'Quantitative Reasoning', 'Verbal Reasoning',
     'Physical Health Education'
   ];
 
@@ -35,6 +23,9 @@ export const useGradebookLogic = () => {
   const [currentTerm, setCurrentTerm] = useState('Term 1');
   const [academicSession, setAcademicSession] = useState('2025/2026');
   const [educatorClass, setEducatorClass] = useState('Grade 6');
+
+  // Control Flags from Academic Sessions Table
+  const [isScoreEntryOpen, setIsScoreEntryOpen] = useState(true);
 
   // Approval Status Tracking
   const [approvalStatus, setApprovalStatus] = useState('Inputting Term 1');
@@ -53,7 +44,6 @@ export const useGradebookLogic = () => {
     setTimeout(() => setShowToast(false), 4000);
   };
 
-  // Fetch Active Academic Session, Term, Pupils, Existing Grades, & Approval Status
   const fetchGradebookData = useCallback(async (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
     try {
@@ -70,7 +60,7 @@ export const useGradebookLogic = () => {
       }
       setEducatorClass(className);
 
-      // Fetch active academic session and term
+      // Fetch active academic session and term settings
       const { data: activeSessionRecord, error: sessionErr } = await supabaseClient
         .from('academic_sessions')
         .select('*')
@@ -79,17 +69,26 @@ export const useGradebookLogic = () => {
 
       let activeTerm = 'Term 1';
       let activeSessionName = '2025/2026';
+      let scoreOpen = true;
 
       if (!sessionErr && activeSessionRecord) {
         if (activeSessionRecord.term_name) activeTerm = activeSessionRecord.term_name;
         if (activeSessionRecord.session_name) activeSessionName = activeSessionRecord.session_name;
+        if (activeSessionRecord.score_entry_open !== undefined) scoreOpen = activeSessionRecord.score_entry_open;
+        
+        // Check date deadline if set
+        if (activeSessionRecord.score_entry_deadline) {
+          const deadlinePassed = new Date() > new Date(activeSessionRecord.score_entry_deadline);
+          if (deadlinePassed) scoreOpen = false;
+        }
       }
 
       setCurrentTerm(activeTerm);
       setAcademicSession(activeSessionName);
-      setApprovalStatus(`Inputting ${activeTerm}`);
+      setIsScoreEntryOpen(scoreOpen);
+      setApprovalStatus(scoreOpen ? `Inputting ${activeTerm}` : 'Score Entry Closed by Admin');
 
-      // Fetch Approval Status for this Subject & Class
+      // Fetch Approval Status
       const { data: approvalRecord } = await supabaseClient
         .from('academic_approvals')
         .select('*')
@@ -108,13 +107,10 @@ export const useGradebookLogic = () => {
         } else if (approvalRecord.status === 'PENDING') {
           setApprovalStatus('Submitted for Approval');
           setIsApprovedOrSubmitted(true);
-        } else {
-          setApprovalStatus(`Inputting ${activeTerm}`);
-          setIsApprovedOrSubmitted(false);
         }
       }
 
-      // Fetch all pupils assigned to this educator's class
+      // Fetch Pupils
       const { data: pupils, error: pupilErr } = await supabaseClient
         .from('profiles')
         .select('id, full_name, avatar_url, grade')
@@ -124,7 +120,7 @@ export const useGradebookLogic = () => {
 
       if (pupilErr) throw pupilErr;
 
-      // Fetch existing grade entries for this subject, term, and session
+      // Fetch Grades
       const { data: existingGrades, error: gradesErr } = await supabaseClient
         .from('student_grades')
         .select('*')
@@ -139,22 +135,17 @@ export const useGradebookLogic = () => {
         existingGrades.forEach(g => gradeMap.set(g.pupil_id, g));
       }
 
-      // Combine pupils with existing grade data
       const combined = (pupils || []).map((pupil, index) => {
         const existing = gradeMap.get(pupil.id);
-        const ca = existing?.ca_score !== undefined && existing?.ca_score !== null ? existing.ca_score : '';
-        const exam = existing?.exam_score !== undefined && existing?.exam_score !== null ? existing.exam_score : '';
-        const remarks = existing?.remarks || '';
-
         return {
           id: pupil.id,
           gradeRecordId: existing?.id || null,
           name: pupil.full_name,
           rollNo: `G6-${String(index + 1).padStart(3, '0')}`,
           avatarUrl: pupil.avatar_url || null,
-          caScore: ca,
-          examScore: exam,
-          remarks: remarks,
+          caScore: existing?.ca_score ?? '',
+          examScore: existing?.exam_score ?? '',
+          remarks: existing?.remarks || '',
           isFinalized: existing?.is_finalized || false
         };
       });
@@ -172,23 +163,17 @@ export const useGradebookLogic = () => {
     fetchGradebookData(false);
   }, [fetchGradebookData]);
 
-  // Score handlers
   const handleScoreChange = (id, field, value) => {
-    if (isApprovedOrSubmitted) return;
+    if (!isScoreEntryOpen || isApprovedOrSubmitted) return;
     const numValue = value === '' ? '' : Math.max(0, Math.min(field === 'caScore' ? 30 : 70, Number(value)));
-    setGrades(prev =>
-      prev.map(item => (item.id === id ? { ...item, [field]: numValue } : item))
-    );
+    setGrades(prev => prev.map(item => (item.id === id ? { ...item, [field]: numValue } : item)));
   };
 
   const handleRemarksChange = (id, newRemarks) => {
-    if (isApprovedOrSubmitted) return;
-    setGrades(prev =>
-      prev.map(item => (item.id === id ? { ...item, remarks: newRemarks } : item))
-    );
+    if (!isScoreEntryOpen || isApprovedOrSubmitted) return;
+    setGrades(prev => prev.map(item => (item.id === id ? { ...item, remarks: newRemarks } : item)));
   };
 
-  // Dynamic Grade Calculations
   const calculatedGrades = grades.map(item => {
     const ca = Number(item.caScore) || 0;
     const exam = Number(item.examScore) || 0;
@@ -215,8 +200,11 @@ export const useGradebookLogic = () => {
     ? calculatedGrades.reduce((prev, current) => (prev.total > current.total ? prev : current), calculatedGrades[0])
     : null;
 
-  // 1. Save Draft to `student_grades` (Iterates and saves each row safely)
   const handleSaveDraft = async () => {
+    if (!isScoreEntryOpen) {
+      triggerToast('Score entry window is closed by administration.');
+      return;
+    }
     setIsSavingDraft(true);
     try {
       for (const g of calculatedGrades) {
@@ -232,38 +220,32 @@ export const useGradebookLogic = () => {
         };
 
         if (g.gradeRecordId) {
-          const { error } = await supabaseClient
-            .from('student_grades')
-            .update(payload)
-            .eq('id', g.gradeRecordId);
+          const { error } = await supabaseClient.from('student_grades').update(payload).eq('id', g.gradeRecordId);
           if (error) throw error;
         } else {
-          const { data, error } = await supabaseClient
-            .from('student_grades')
-            .insert([payload])
-            .select();
+          const { data, error } = await supabaseClient.from('student_grades').insert([payload]).select();
           if (error) throw error;
           if (data && data[0]) g.gradeRecordId = data[0].id;
         }
       }
-
       setShowDraftModal(true);
       await fetchGradebookData(true);
     } catch (err) {
-      console.error('Error saving draft:', err.message);
       triggerToast(`Error saving draft: ${err.message}`);
     } finally {
       setIsSavingDraft(false);
     }
   };
 
-  // 2. Finalize & Submit to `academic_approvals`
   const handleFinalizeGrades = async () => {
+    if (!isScoreEntryOpen) {
+      triggerToast('Score entry window is closed by administration.');
+      return;
+    }
     setIsFinalizing(true);
     try {
       const { data: { user } } = await supabaseClient.auth.getUser();
 
-      // Save/Update grades as finalized
       for (const g of calculatedGrades) {
         const payload = {
           pupil_id: g.id,
@@ -277,22 +259,15 @@ export const useGradebookLogic = () => {
         };
 
         if (g.gradeRecordId) {
-          const { error } = await supabaseClient
-            .from('student_grades')
-            .update(payload)
-            .eq('id', g.gradeRecordId);
+          const { error } = await supabaseClient.from('student_grades').update(payload).eq('id', g.gradeRecordId);
           if (error) throw error;
         } else {
-          const { data, error } = await supabaseClient
-            .from('student_grades')
-            .insert([payload])
-            .select();
+          const { data, error } = await supabaseClient.from('student_grades').insert([payload]).select();
           if (error) throw error;
           if (data && data[0]) g.gradeRecordId = data[0].id;
         }
       }
 
-      // Insert approval request
       const approvalPayload = {
         educator_id: user?.id || null,
         class_name: educatorClass,
@@ -303,33 +278,22 @@ export const useGradebookLogic = () => {
         submitted_at: new Date().toISOString()
       };
 
-      const { error: approvalError } = await supabaseClient
-        .from('academic_approvals')
-        .insert([approvalPayload]);
-
+      const { error: approvalError } = await supabaseClient.from('academic_approvals').insert([approvalPayload]);
       if (approvalError) throw new Error(`Approval Error: ${approvalError.message}`);
 
       setShowFinalizeModal(true);
       await fetchGradebookData(true);
     } catch (err) {
-      console.error('Error finalizing grades:', err.message);
       triggerToast(err.message);
     } finally {
       setIsFinalizing(false);
     }
   };
 
-  // CSV Exporter
   const handleExportCSV = () => {
     const headers = ['Pupil Name', 'Roll No', 'C.A (30)', 'Exam (70)', 'Total (100)', 'Grade', 'Remarks'];
     const rows = calculatedGrades.map(g => [
-      `"${g.name}"`,
-      `"${g.rollNo}"`,
-      g.caScore,
-      g.examScore,
-      g.total,
-      g.letterGrade,
-      `"${g.remarks}"`
+      `"${g.name}"`, `"${g.rollNo}"`, g.caScore, g.examScore, g.total, g.letterGrade, `"${g.remarks}"`
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
@@ -344,36 +308,19 @@ export const useGradebookLogic = () => {
   };
 
   return {
-    selectedSubject,
-    setSelectedSubject,
-    showSubjectDropdown,
-    setShowSubjectDropdown,
-    curriculumSubjects,
-    grades,
-    filteredGrades,
-    isLoading,
-    isSavingDraft,
-    isFinalizing,
-    searchQuery,
-    setSearchQuery,
-    subjectAverage,
-    topPerformer,
-    approvalStatus,
-    isApprovedOrSubmitted,
-    currentTerm,
-    academicSession,
-    showDraftModal,
-    setShowDraftModal,
-    showExportModal,
-    setShowExportModal,
-    showFinalizeModal,
-    setShowFinalizeModal,
-    showToast,
-    toastMessage,
-    handleScoreChange,
-    handleRemarksChange,
-    handleSaveDraft,
-    handleFinalizeGrades,
-    handleExportCSV
+    selectedSubject, setSelectedSubject,
+    showSubjectDropdown, setShowSubjectDropdown,
+    curriculumSubjects, grades, filteredGrades,
+    isLoading, isSavingDraft, isFinalizing,
+    searchQuery, setSearchQuery,
+    subjectAverage, topPerformer,
+    approvalStatus, isApprovedOrSubmitted,
+    currentTerm, academicSession, isScoreEntryOpen,
+    showDraftModal, setShowDraftModal,
+    showExportModal, setShowExportModal,
+    showFinalizeModal, setShowFinalizeModal,
+    showToast, toastMessage,
+    handleScoreChange, handleRemarksChange,
+    handleSaveDraft, handleFinalizeGrades, handleExportCSV
   };
 };
