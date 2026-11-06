@@ -1,326 +1,568 @@
-import { useState, useEffect, useCallback } from 'react';
-import supabaseClient from '../../config/supabaseClient';
+import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  User,
+  Calendar, 
+  Shield, 
+  Activity, 
+  RefreshCw, 
+  CheckCircle2, 
+  Clock, 
+  ChevronDown, 
+  AlertTriangle,
+  Camera,
+  Check,
+  Lock,
+  Eye,
+  EyeOff,
+  KeyRound
+} from 'lucide-react';
+import { useAdminSettingsLogic } from '../../../Backend/Admin/AdminSettingsLogic';
 
-export const useGradebookLogic = () => {
-  const [grades, setGrades] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSavingDraft, setIsSavingDraft] = useState(false);
-  const [isFinalizing, setIsFinalizing] = useState(false);
-  
-  // Selection & Curriculum Subjects
-  const [selectedSubject, setSelectedSubject] = useState('Mathematics');
-  const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
-  
-  const curriculumSubjects = [
-    'Numeracy', 'Literacy', 'Rhymes', 'General Paper', 'CRS',
-    'Mathematics', 'English language', 'Basic science', 'Social studies',
-    'History', 'Yoruba', 'Creative & Cultural Arts', 'Vocational Studies',
-    'Security Education', 'Quantitative Reasoning', 'Verbal Reasoning',
-    'Physical Health Education'
-  ];
+const AdminSettings = () => {
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentTerm, setCurrentTerm] = useState('Term 1');
-  const [academicSession, setAcademicSession] = useState('2025/2026');
-  const [educatorClass, setEducatorClass] = useState('Grade 6');
+  const {
+    activeTab, setActiveTab,
+    isSaving, isLoadingLogs, toast,
+    profile, setProfile,
+    settings, setSettings,
+    passwordData, setPasswordData,
+    showCurrentPassword, setShowCurrentPassword,
+    showNewPassword, setShowNewPassword,
+    showConfirmPassword, setShowConfirmPassword,
+    passwordStatus,
+    isTermDropdownOpen, setIsTermDropdownOpen,
+    termOptions,
+    systemActivityLogs,
+    handleAvatarUpload,
+    handleSave,
+    handlePasswordChangeSubmit
+  } = useAdminSettingsLogic();
 
-  // Control Flags from Academic Sessions Table
-  const [isScoreEntryOpen, setIsScoreEntryOpen] = useState(true);
+  return (
+    <div className="p-4 sm:p-8 space-y-8 max-w-7xl mx-auto font-sans antialiased text-slate-800">
+      
+      {/* Toast Notification Banner (Positioned Bottom-Right) */}
+      <AnimatePresence>
+        {toast.visible && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className={`fixed bottom-6 right-6 z-50 p-4 rounded-2xl shadow-2xl text-xs font-black flex items-center space-x-2 border ${
+              toast.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+            }`}
+          >
+            {toast.type === 'error' ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}
+            <span>{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-  // Approval Status Tracking
-  const [approvalStatus, setApprovalStatus] = useState('Inputting Term 1');
-  const [isApprovedOrSubmitted, setIsApprovedOrSubmitted] = useState(false);
+      {/* Top Header Card Container */}
+      <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            System Configuration & Settings
+          </h1>
+          <p className="text-xs sm:text-sm font-medium text-slate-500 pt-1">
+            Manage your admin profile, live academic sessions, security preferences, and activity logs.
+          </p>
+        </div>
 
-  // Modals & Toast State
-  const [showDraftModal, setShowDraftModal] = useState(false);
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [showFinalizeModal, setShowFinalizeModal] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="bg-[#121B2D] hover:bg-slate-800 text-white font-extrabold px-6 py-3 rounded-2xl text-xs sm:text-sm shadow-xl shadow-slate-900/20 transition-all cursor-pointer flex items-center space-x-2 disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={isSaving ? 'animate-spin' : ''} />
+            <span>{isSaving ? 'Saving...' : 'Update System'}</span>
+          </button>
+        </div>
+      </div>
 
-  const triggerToast = (msg) => {
-    setToastMessage(msg);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 4000);
-  };
-
-  const fetchGradebookData = useCallback(async (isSilent = false) => {
-    if (!isSilent) setIsLoading(true);
-    try {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      let className = 'Grade 6';
-
-      if (user) {
-        const { data: prof } = await supabaseClient
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        if (prof?.grade) className = prof.grade;
-      }
-      setEducatorClass(className);
-
-      // Fetch active academic session and term settings
-      const { data: activeSessionRecord, error: sessionErr } = await supabaseClient
-        .from('academic_sessions')
-        .select('*')
-        .eq('is_active', true)
-        .maybeSingle();
-
-      let activeTerm = 'Term 1';
-      let activeSessionName = '2025/2026';
-      let scoreOpen = true;
-
-      if (!sessionErr && activeSessionRecord) {
-        if (activeSessionRecord.term_name) activeTerm = activeSessionRecord.term_name;
-        if (activeSessionRecord.session_name) activeSessionName = activeSessionRecord.session_name;
-        if (activeSessionRecord.score_entry_open !== undefined) scoreOpen = activeSessionRecord.score_entry_open;
+      {/* Main Layout: Vertical Navigation System UI */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         
-        // Check date deadline if set
-        if (activeSessionRecord.score_entry_deadline) {
-          const deadlinePassed = new Date() > new Date(activeSessionRecord.score_entry_deadline);
-          if (deadlinePassed) scoreOpen = false;
-        }
-      }
+        {/* Left Column: Vertical Nav System Buttons */}
+        <div className="lg:col-span-1">
+          <div className="bg-white p-4 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-2">
+            
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`w-full flex items-center space-x-3 px-4 py-3.5 rounded-2xl text-xs font-extrabold transition-all cursor-pointer ${
+                activeTab === 'profile' 
+                  ? 'bg-[#121B2D] text-white shadow-md' 
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <User size={18} className={activeTab === 'profile' ? 'text-sky-400' : 'text-slate-400'} />
+              <span>Profile Settings</span>
+            </button>
 
-      setCurrentTerm(activeTerm);
-      setAcademicSession(activeSessionName);
-      setIsScoreEntryOpen(scoreOpen);
-      setApprovalStatus(scoreOpen ? `Inputting ${activeTerm}` : 'Score Entry Closed by Admin');
+            <button
+              onClick={() => setActiveTab('session')}
+              className={`w-full flex items-center space-x-3 px-4 py-3.5 rounded-2xl text-xs font-extrabold transition-all cursor-pointer ${
+                activeTab === 'session' 
+                  ? 'bg-[#121B2D] text-white shadow-md' 
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <Calendar size={18} className={activeTab === 'session' ? 'text-sky-400' : 'text-slate-400'} />
+              <span>Academic Session</span>
+            </button>
 
-      // Fetch Approval Status
-      const { data: approvalRecord } = await supabaseClient
-        .from('academic_approvals')
-        .select('*')
-        .eq('class_name', className)
-        .eq('subject', selectedSubject.toUpperCase())
-        .eq('term', activeTerm)
-        .eq('academic_session', activeSessionName)
-        .order('submitted_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+            <button
+              onClick={() => setActiveTab('security')}
+              className={`w-full flex items-center space-x-3 px-4 py-3.5 rounded-2xl text-xs font-extrabold transition-all cursor-pointer ${
+                activeTab === 'security' 
+                  ? 'bg-[#121B2D] text-white shadow-md' 
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <Shield size={18} className={activeTab === 'security' ? 'text-sky-400' : 'text-slate-400'} />
+              <span>Privacy & Security</span>
+            </button>
 
-      if (approvalRecord) {
-        if (approvalRecord.status === 'APPROVED') {
-          setApprovalStatus('Approved');
-          setIsApprovedOrSubmitted(true);
-        } else if (approvalRecord.status === 'PENDING') {
-          setApprovalStatus('Submitted for Approval');
-          setIsApprovedOrSubmitted(true);
-        }
-      }
+            <button
+              onClick={() => setActiveTab('activity')}
+              className={`w-full flex items-center space-x-3 px-4 py-3.5 rounded-2xl text-xs font-extrabold transition-all cursor-pointer ${
+                activeTab === 'activity' 
+                  ? 'bg-[#121B2D] text-white shadow-md' 
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <Activity size={18} className={activeTab === 'activity' ? 'text-sky-400' : 'text-slate-400'} />
+              <span>System Activity</span>
+            </button>
 
-      // Fetch Pupils
-      const { data: pupils, error: pupilErr } = await supabaseClient
-        .from('profiles')
-        .select('id, full_name, avatar_url, grade')
-        .eq('role', 'pupil')
-        .ilike('grade', `%${className}%`)
-        .order('full_name', { ascending: true });
+          </div>
+        </div>
 
-      if (pupilErr) throw pupilErr;
+        {/* Right Column: Dynamic Content Card */}
+        <div className="lg:col-span-3">
+          <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-6">
+            
+            <form onSubmit={handleSave} className="space-y-6">
 
-      // Fetch Grades
-      const { data: existingGrades, error: gradesErr } = await supabaseClient
-        .from('student_grades')
-        .select('*')
-        .eq('subject', selectedSubject.toUpperCase())
-        .eq('term', activeTerm)
-        .eq('academic_session', activeSessionName);
+              {/* SECTION 1: PROFILE SETTINGS */}
+              {activeTab === 'profile' && (
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-3 pb-4 border-b border-slate-100">
+                    <div className="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
+                      <User size={20} />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-base font-black text-slate-900">Admin Profile Details</h3>
+                      <p className="text-xs font-medium text-slate-500">Update your administrator credentials and contact details in Supabase.</p>
+                    </div>
+                  </div>
 
-      if (gradesErr) throw gradesErr;
+                  <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 flex items-center space-x-5">
+                    <div className="relative">
+                      {profile.avatar ? (
+                        <img
+                          src={profile.avatar}
+                          alt={profile.fullName}
+                          className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-full bg-slate-200 border-4 border-white shadow-md flex items-center justify-center text-slate-500 font-black">
+                          {profile.fullName ? profile.fullName.charAt(0) : 'A'}
+                        </div>
+                      )}
+                      
+                      <label 
+                        htmlFor="avatar-upload"
+                        className="absolute bottom-0 right-0 bg-sky-500 text-white p-2 rounded-full shadow-md hover:bg-sky-600 transition-colors cursor-pointer"
+                        title="Upload Avatar (Max 30KB)"
+                      >
+                        <Camera size={14} />
+                        <input
+                          id="avatar-upload"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
 
-      const gradeMap = new Map();
-      if (existingGrades) {
-        existingGrades.forEach(g => gradeMap.set(g.pupil_id, g));
-      }
+                    <div className="text-left">
+                      <h4 className="text-sm font-black text-slate-900">{profile.fullName || 'Admin User'}</h4>
+                      <p className="text-xs font-bold text-sky-600 uppercase tracking-wider pt-0.5">{profile.roleTitle}</p>
+                      <p className="text-[11px] font-medium text-slate-400 pt-1">
+                        Upload custom image (PNG, JPG — strictly max 30KB).
+                      </p>
+                    </div>
+                  </div>
 
-      const combined = (pupils || []).map((pupil, index) => {
-        const existing = gradeMap.get(pupil.id);
-        return {
-          id: pupil.id,
-          gradeRecordId: existing?.id || null,
-          name: pupil.full_name,
-          rollNo: `G6-${String(index + 1).padStart(3, '0')}`,
-          avatarUrl: pupil.avatar_url || null,
-          caScore: existing?.ca_score ?? '',
-          examScore: existing?.exam_score ?? '',
-          remarks: existing?.remarks || '',
-          isFinalized: existing?.is_finalized || false
-        };
-      });
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2 text-left">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">FULL NAME</label>
+                      <input
+                        type="text"
+                        value={profile.fullName}
+                        onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-sky-500 rounded-2xl px-4 py-3 text-xs font-bold text-slate-800 shadow-inner focus:outline-none"
+                      />
+                    </div>
 
-      setGrades(combined);
-    } catch (err) {
-      console.error('Error loading gradebook:', err.message);
-      triggerToast(`Failed to load gradebook: ${err.message}`);
-    } finally {
-      if (!isSilent) setIsLoading(false);
-    }
-  }, [selectedSubject]);
+                    <div className="space-y-2 text-left">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">PORTAL EMAIL</label>
+                      <input
+                        type="email"
+                        value={profile.portalEmail}
+                        onChange={(e) => setProfile({ ...profile, portalEmail: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-sky-500 rounded-2xl px-4 py-3 text-xs font-bold text-slate-800 shadow-inner focus:outline-none"
+                      />
+                    </div>
 
-  useEffect(() => {
-    fetchGradebookData(false);
-  }, [fetchGradebookData]);
+                    <div className="space-y-2 text-left">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">PHONE NUMBER</label>
+                      <input
+                        type="text"
+                        value={profile.phone}
+                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-sky-500 rounded-2xl px-4 py-3 text-xs font-bold text-slate-800 shadow-inner focus:outline-none"
+                      />
+                    </div>
 
-  const handleScoreChange = (id, field, value) => {
-    if (!isScoreEntryOpen || isApprovedOrSubmitted) return;
-    const numValue = value === '' ? '' : Math.max(0, Math.min(field === 'caScore' ? 30 : 70, Number(value)));
-    setGrades(prev => prev.map(item => (item.id === id ? { ...item, [field]: numValue } : item)));
-  };
+                    <div className="space-y-2 text-left">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">ROLE TITLE</label>
+                      <input
+                        type="text"
+                        value={profile.roleTitle}
+                        disabled
+                        className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-bold text-slate-500 cursor-not-allowed"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
-  const handleRemarksChange = (id, newRemarks) => {
-    if (!isScoreEntryOpen || isApprovedOrSubmitted) return;
-    setGrades(prev => prev.map(item => (item.id === id ? { ...item, remarks: newRemarks } : item)));
-  };
+              {/* SECTION 2: ACADEMIC SESSION */}
+              {activeTab === 'session' && (
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-3 pb-4 border-b border-slate-100">
+                    <div className="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
+                      <Calendar size={20} />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-base font-black text-slate-900">Session Timing & Academic Settings</h3>
+                      <p className="text-xs font-medium text-slate-500">Manage term dates and active session flags in Supabase.</p>
+                    </div>
+                  </div>
 
-  const calculatedGrades = grades.map(item => {
-    const ca = Number(item.caScore) || 0;
-    const exam = Number(item.examScore) || 0;
-    const total = ca + exam;
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    
+                    {/* Active Academic Session Input */}
+                    <div className="space-y-2 text-left">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">ACTIVE ACADEMIC SESSION</label>
+                      <input
+                        type="text"
+                        value={settings.activeSession}
+                        onChange={(e) => setSettings({ ...settings, activeSession: e.target.value })}
+                        placeholder="e.g., 2024/2025 Academic Session"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-sky-500 rounded-2xl px-4 py-3.5 text-xs font-bold text-slate-800 shadow-inner focus:outline-none"
+                      />
+                    </div>
 
-    let letterGrade = 'F';
-    if (total >= 75) letterGrade = 'A';
-    else if (total >= 65) letterGrade = 'B';
-    else if (total >= 50) letterGrade = 'C';
-    else if (total >= 40) letterGrade = 'D';
+                    {/* Current Active Term Dropdown */}
+                    <div className="space-y-2 relative text-left">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">CURRENT ACTIVE TERM</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsTermDropdownOpen(!isTermDropdownOpen)}
+                        className="w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-2xl px-4 py-3.5 text-xs font-bold text-slate-800 flex items-center justify-between transition-colors cursor-pointer shadow-inner"
+                      >
+                        <span>{settings.currentTerm} (Active)</span>
+                        <ChevronDown size={16} className={`text-slate-400 transition-transform ${isTermDropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
 
-    return { ...item, total, letterGrade };
-  });
+                      <AnimatePresence>
+                        {isTermDropdownOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                            className="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 overflow-hidden"
+                          >
+                            {termOptions.map((term, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => {
+                                  setSettings({ ...settings, currentTerm: term });
+                                  setIsTermDropdownOpen(false);
+                                }}
+                                className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center justify-between cursor-pointer ${
+                                  settings.currentTerm === term ? 'bg-sky-50 text-sky-600 font-black' : 'text-slate-700 hover:bg-slate-50'
+                                }`}
+                              >
+                                <span>{term} {settings.currentTerm === term && '(Active)'}</span>
+                                {settings.currentTerm === term && <Check size={14} className="text-sky-500" />}
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
 
-  const filteredGrades = calculatedGrades.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.rollNo.toLowerCase().includes(searchQuery.toLowerCase())
+                    <div className="space-y-2 text-left">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">TERM START DATE</label>
+                      <input
+                        type="date"
+                        value={settings.termStartDate}
+                        onChange={(e) => setSettings({ ...settings, termStartDate: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-bold text-slate-800 shadow-inner"
+                      />
+                    </div>
+
+                    <div className="space-y-2 text-left">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">TERM END DATE</label>
+                      <input
+                        type="date"
+                        value={settings.termEndDate}
+                        onChange={(e) => setSettings({ ...settings, termEndDate: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-bold text-slate-800 shadow-inner"
+                      />
+                    </div>
+
+                  </div>
+
+                  <div className="space-y-4 pt-4">
+                    {/* Score Entry Window Toggle (Blue Pill Switch Style) */}
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="text-left">
+                        <h4 className="text-xs font-black text-slate-900">Score Entry Window</h4>
+                        <p className="text-[11px] font-medium text-slate-500">Allow teachers to input C.A and Exam scores into the portal.</p>
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => setSettings((prev) => ({ ...prev, scoreEntryWindow: !prev.scoreEntryWindow }))}
+                        className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${
+                          settings.scoreEntryWindow ? 'bg-blue-600' : 'bg-slate-300'
+                        }`}
+                      >
+                        <div
+                          className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-transform duration-300 ${
+                            settings.scoreEntryWindow ? 'translate-x-6' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Parent Result Portal Toggle (Blue Pill Switch Style) */}
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="text-left">
+                        <h4 className="text-xs font-black text-slate-900">Parent Result Portal</h4>
+                        <p className="text-[11px] font-medium text-slate-500">Enable parents to view and download term result PDF reports.</p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setSettings((prev) => ({ ...prev, parentResultPortal: !prev.parentResultPortal }))}
+                        className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${
+                          settings.parentResultPortal ? 'bg-blue-600' : 'bg-slate-300'
+                        }`}
+                      >
+                        <div
+                          className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-transform duration-300 ${
+                            settings.parentResultPortal ? 'translate-x-6' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION 3: PRIVACY & SECURITY */}
+              {activeTab === 'security' && (
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-3 pb-4 border-b border-slate-100">
+                    <div className="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
+                      <Shield size={20} />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-base font-black text-slate-900">Portal Access & Security Controls</h3>
+                      <p className="text-xs font-medium text-slate-500">Update your account password securely via Supabase Auth.</p>
+                    </div>
+                  </div>
+
+                  <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
+                    <div className="flex items-center space-x-2.5 text-slate-900">
+                      <KeyRound size={18} className="text-sky-500" />
+                      <h4 className="text-xs font-black uppercase tracking-wider">Change Account Password</h4>
+                    </div>
+
+                    {passwordStatus && (
+                      <div className={`p-3 rounded-2xl text-xs font-extrabold flex items-center space-x-2 ${
+                        passwordStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'
+                      }`}>
+                        {passwordStatus.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                        <span>{passwordStatus.message}</span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="space-y-1.5 text-left">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">CURRENT PASSWORD</label>
+                        <div className="relative">
+                          <input
+                            type={showCurrentPassword ? 'text' : 'password'}
+                            value={passwordData.currentPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                            placeholder="••••••••"
+                            className="w-full bg-white border border-slate-200 focus:border-sky-500 rounded-2xl pl-4 pr-10 py-2.5 text-xs font-bold text-slate-800 shadow-sm focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                            className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          >
+                            {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 text-left">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">NEW PASSWORD</label>
+                        <div className="relative">
+                          <input
+                            type={showNewPassword ? 'text' : 'password'}
+                            value={passwordData.newPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                            placeholder="••••••••"
+                            className="w-full bg-white border border-slate-200 focus:border-sky-500 rounded-2xl pl-4 pr-10 py-2.5 text-xs font-bold text-slate-800 shadow-sm focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          >
+                            {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 text-left">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">CONFIRM NEW PASSWORD</label>
+                        <div className="relative">
+                          <input
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            value={passwordData.confirmPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                            placeholder="••••••••"
+                            className="w-full bg-white border border-slate-200 focus:border-sky-500 rounded-2xl pl-4 pr-10 py-2.5 text-xs font-bold text-slate-800 shadow-sm focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          >
+                            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                      <button
+                        type="button"
+                        onClick={handlePasswordChangeSubmit}
+                        className="bg-[#121B2D] hover:bg-slate-800 text-white font-extrabold px-5 py-2.5 rounded-2xl text-xs transition-all cursor-pointer shadow-md flex items-center space-x-1.5"
+                      >
+                        <Lock size={14} />
+                        <span>Update Password</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION 4: SYSTEM ACTIVITY */}
+              {activeTab === 'activity' && (
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-3 pb-4 border-b border-slate-100">
+                    <div className="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
+                      <Activity size={20} />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-base font-black text-slate-900">System Activity & Audit Trail</h3>
+                      <p className="text-xs font-medium text-slate-500">Monitor live security logs and platform events from Supabase.</p>
+                    </div>
+                  </div>
+
+                  {isLoadingLogs ? (
+                    <div className="py-12 flex items-center justify-center space-x-2 text-slate-400 text-xs font-bold">
+                      <RefreshCw size={16} className="animate-spin text-sky-500" />
+                      <span>Fetching audit trail...</span>
+                    </div>
+                  ) : systemActivityLogs.length > 0 ? (
+                    <div className="space-y-3">
+                      {systemActivityLogs.map((log) => (
+                        <div key={log.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-start space-x-3">
+                            <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <Clock size={18} />
+                            </div>
+                            <div className="text-left">
+                              <h4 className="text-xs font-black text-slate-900">{log.action}</h4>
+                              <p className="text-[11px] font-bold text-slate-500">
+                                IP: <span className="text-slate-700">{log.ip_address || '197.210.54.12'}</span>
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-3 self-end sm:self-center">
+                            <span className="text-[10px] font-bold text-slate-400">
+                              {log.created_at ? new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                            </span>
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
+                              log.status === 'Success' ? 'bg-emerald-50 text-emerald-600' :
+                              log.status === 'Completed' ? 'bg-sky-50 text-sky-600' : 'bg-amber-50 text-amber-700'
+                            }`}>
+                              {log.status || 'Success'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-12 text-center space-y-2 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                      <Activity size={32} className="mx-auto text-slate-300" />
+                      <h4 className="text-xs font-black text-slate-600">No Activity Logs Found</h4>
+                      <p className="text-[11px] font-medium text-slate-400">Administrative events will appear here automatically when recorded.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Form Action Footer */}
+              <div className="pt-6 border-t border-slate-100 flex items-center justify-end">
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="bg-[#121B2D] hover:bg-slate-800 text-white font-extrabold px-8 py-3.5 rounded-2xl text-xs sm:text-sm shadow-xl shadow-slate-900/20 transition-all cursor-pointer flex items-center space-x-2 disabled:opacity-50"
+                >
+                  <RefreshCw size={16} className={isSaving ? 'animate-spin' : ''} />
+                  <span>{isSaving ? 'Saving Changes...' : 'Save Configuration Changes'}</span>
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
   );
-
-  const overallTotalSum = calculatedGrades.reduce((acc, curr) => acc + curr.total, 0);
-  const subjectAverage = calculatedGrades.length > 0 ? Math.round(overallTotalSum / calculatedGrades.length) : 0;
-
-  const topPerformer = calculatedGrades.length > 0
-    ? calculatedGrades.reduce((prev, current) => (prev.total > current.total ? prev : current), calculatedGrades[0])
-    : null;
-
-  const handleSaveDraft = async () => {
-    if (!isScoreEntryOpen) {
-      triggerToast('Score entry window is closed by administration.');
-      return;
-    }
-    setIsSavingDraft(true);
-    try {
-      for (const g of calculatedGrades) {
-        const payload = {
-          pupil_id: g.id,
-          subject: selectedSubject.toUpperCase(),
-          term: currentTerm,
-          academic_session: academicSession,
-          ca_score: g.caScore === '' ? null : Number(g.caScore),
-          exam_score: g.examScore === '' ? null : Number(g.examScore),
-          remarks: g.remarks,
-          is_finalized: false
-        };
-
-        if (g.gradeRecordId) {
-          const { error } = await supabaseClient.from('student_grades').update(payload).eq('id', g.gradeRecordId);
-          if (error) throw error;
-        } else {
-          const { data, error } = await supabaseClient.from('student_grades').insert([payload]).select();
-          if (error) throw error;
-          if (data && data[0]) g.gradeRecordId = data[0].id;
-        }
-      }
-      setShowDraftModal(true);
-      await fetchGradebookData(true);
-    } catch (err) {
-      triggerToast(`Error saving draft: ${err.message}`);
-    } finally {
-      setIsSavingDraft(false);
-    }
-  };
-
-  const handleFinalizeGrades = async () => {
-    if (!isScoreEntryOpen) {
-      triggerToast('Score entry window is closed by administration.');
-      return;
-    }
-    setIsFinalizing(true);
-    try {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-
-      for (const g of calculatedGrades) {
-        const payload = {
-          pupil_id: g.id,
-          subject: selectedSubject.toUpperCase(),
-          term: currentTerm,
-          academic_session: academicSession,
-          ca_score: g.caScore === '' ? 0 : Number(g.caScore),
-          exam_score: g.examScore === '' ? 0 : Number(g.examScore),
-          remarks: g.remarks,
-          is_finalized: true
-        };
-
-        if (g.gradeRecordId) {
-          const { error } = await supabaseClient.from('student_grades').update(payload).eq('id', g.gradeRecordId);
-          if (error) throw error;
-        } else {
-          const { data, error } = await supabaseClient.from('student_grades').insert([payload]).select();
-          if (error) throw error;
-          if (data && data[0]) g.gradeRecordId = data[0].id;
-        }
-      }
-
-      const approvalPayload = {
-        educator_id: user?.id || null,
-        class_name: educatorClass,
-        subject: selectedSubject.toUpperCase(),
-        status: 'PENDING',
-        term: currentTerm,
-        academic_session: academicSession,
-        submitted_at: new Date().toISOString()
-      };
-
-      const { error: approvalError } = await supabaseClient.from('academic_approvals').insert([approvalPayload]);
-      if (approvalError) throw new Error(`Approval Error: ${approvalError.message}`);
-
-      setShowFinalizeModal(true);
-      await fetchGradebookData(true);
-    } catch (err) {
-      triggerToast(err.message);
-    } finally {
-      setIsFinalizing(false);
-    }
-  };
-
-  const handleExportCSV = () => {
-    const headers = ['Pupil Name', 'Roll No', 'C.A (30)', 'Exam (70)', 'Total (100)', 'Grade', 'Remarks'];
-    const rows = calculatedGrades.map(g => [
-      `"${g.name}"`, `"${g.rollNo}"`, g.caScore, g.examScore, g.total, g.letterGrade, `"${g.remarks}"`
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `${selectedSubject}_Gradebook_${educatorClass}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setShowExportModal(true);
-  };
-
-  return {
-    selectedSubject, setSelectedSubject,
-    showSubjectDropdown, setShowSubjectDropdown,
-    curriculumSubjects, grades, filteredGrades,
-    isLoading, isSavingDraft, isFinalizing,
-    searchQuery, setSearchQuery,
-    subjectAverage, topPerformer,
-    approvalStatus, isApprovedOrSubmitted,
-    currentTerm, academicSession, isScoreEntryOpen,
-    showDraftModal, setShowDraftModal,
-    showExportModal, setShowExportModal,
-    showFinalizeModal, setShowFinalizeModal,
-    showToast, toastMessage,
-    handleScoreChange, handleRemarksChange,
-    handleSaveDraft, handleFinalizeGrades, handleExportCSV
-  };
 };
+
+export default AdminSettings;
