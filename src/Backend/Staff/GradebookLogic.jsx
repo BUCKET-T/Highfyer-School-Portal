@@ -86,7 +86,14 @@ export const useGradebookLogic = () => {
       setCurrentTerm(activeTerm);
       setAcademicSession(activeSessionName);
       setIsScoreEntryOpen(scoreOpen);
-      setApprovalStatus(scoreOpen ? `Inputting ${activeTerm}` : 'Score Entry Closed by Admin');
+      setApprovalStatus(scoreOpen ? `Inputting ${activeTerm}` : 'Score Entry Closed');
+
+      // If score entry is turned off by admin, clear grades to trigger UI empty state
+      if (!scoreOpen) {
+        setGrades([]);
+        setIsLoading(false);
+        return;
+      }
 
       // Fetch Approval Status
       const { data: approvalRecord } = await supabaseClient
