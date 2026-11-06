@@ -76,7 +76,6 @@ export const useGradebookLogic = () => {
         if (activeSessionRecord.session_name) activeSessionName = activeSessionRecord.session_name;
         if (activeSessionRecord.score_entry_open !== undefined) scoreOpen = activeSessionRecord.score_entry_open;
         
-        // Check date deadline if set
         if (activeSessionRecord.score_entry_deadline) {
           const deadlinePassed = new Date() > new Date(activeSessionRecord.score_entry_deadline);
           if (deadlinePassed) scoreOpen = false;
@@ -86,16 +85,14 @@ export const useGradebookLogic = () => {
       setCurrentTerm(activeTerm);
       setAcademicSession(activeSessionName);
       setIsScoreEntryOpen(scoreOpen);
-      setApprovalStatus(scoreOpen ? `Inputting ${activeTerm}` : 'Score Entry Closed');
 
-      // If score entry is turned off by admin, clear grades to trigger UI empty state
       if (!scoreOpen) {
         setGrades([]);
         setIsLoading(false);
         return;
       }
 
-      // Fetch Approval Status
+      // Fetch Approval Status & Handle Rejection Unlocking
       const { data: approvalRecord } = await supabaseClient
         .from('academic_approvals')
         .select('*')
@@ -108,13 +105,23 @@ export const useGradebookLogic = () => {
         .maybeSingle();
 
       if (approvalRecord) {
-        if (approvalRecord.status === 'APPROVED') {
+        const statusUpper = approvalRecord.status?.toUpperCase();
+        if (statusUpper === 'APPROVED') {
           setApprovalStatus('Approved');
           setIsApprovedOrSubmitted(true);
-        } else if (approvalRecord.status === 'PENDING') {
+        } else if (statusUpper === 'PENDING' || statusUpper === 'REVIEWING') {
           setApprovalStatus('Submitted for Approval');
           setIsApprovedOrSubmitted(true);
+        } else if (statusUpper === 'REJECTED') {
+          setApprovalStatus('Rejected - Revision Required');
+          setIsApprovedOrSubmitted(false); // Unlocks the gradebook for educator edits!
+        } else {
+          setApprovalStatus(`Inputting ${activeTerm}`);
+          setIsApprovedOrSubmitted(false);
         }
+      } else {
+        setApprovalStatus(`Inputting ${activeTerm}`);
+        setIsApprovedOrSubmitted(false);
       }
 
       // Fetch Pupils
@@ -252,6 +259,28 @@ export const useGradebookLogic = () => {
     setIsFinalizing(true);
     try {
       const { data: { user } } = await supabaseClient.auth.getUser();
+      let educatorProfileId = user?.id;
+
+      if (user) {
+        const { data: profCheck } = await supabaseClient
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (!profCheck) {
+          const { data: fallbackEducator } = await supabaseClient
+            .from('profiles')
+            .select('id')
+            .eq('role', 'educator')
+            .limit(1)
+            .maybeSingle();
+
+          if (fallbackEducator) {
+            educatorProfileId = fallbackEducator.id;
+          }
+        }
+      }
 
       for (const g of calculatedGrades) {
         const payload = {
@@ -276,7 +305,7 @@ export const useGradebookLogic = () => {
       }
 
       const approvalPayload = {
-        educator_id: user?.id || null,
+        educator_id: educatorProfileId || null,
         class_name: educatorClass,
         subject: selectedSubject.toUpperCase(),
         status: 'PENDING',

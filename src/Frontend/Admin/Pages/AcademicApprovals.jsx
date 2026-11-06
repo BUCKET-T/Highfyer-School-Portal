@@ -260,9 +260,9 @@ const AcademicApprovals = () => {
 
                     <td className="py-4 px-2">
                       <span className={`inline-flex items-center px-3.5 py-1 rounded-full text-[10px] font-extrabold ${
-                        sub.status === 'Approved' ? 'bg-emerald-50 text-emerald-600' :
-                        sub.status === 'Pending' ? 'bg-sky-100 text-sky-600' :
-                        sub.status === 'Reviewing' ? 'bg-amber-100 text-amber-700' : 'bg-rose-50 text-rose-600'
+                        sub.status?.toUpperCase() === 'APPROVED' ? 'bg-emerald-50 text-emerald-600' :
+                        sub.status?.toUpperCase() === 'PENDING' ? 'bg-sky-100 text-sky-600' :
+                        sub.status?.toUpperCase() === 'REVIEWING' ? 'bg-amber-100 text-amber-700' : 'bg-rose-50 text-rose-600'
                       }`}>
                         {sub.status.toUpperCase()}
                       </span>

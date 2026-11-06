@@ -403,7 +403,7 @@ const Attendance = () => {
               </div>
               <div className="space-y-1">
                 <h3 className="text-lg font-black text-brand-navy">Register Saved & Submitted!</h3>
-                <p className="text-xs text-slate-500 font-medium">Attendance register saved successfully to Supabase.</p>
+                <p className="text-xs text-slate-500 font-medium">Attendance register saved successfully.</p>
               </div>
               <button type="button" onClick={() => setShowSubmitModal(false)} className="w-full bg-sky-500 hover:bg-sky-600 text-white font-extrabold py-3 rounded-2xl text-xs shadow-md transition-all cursor-pointer">
                 Okay, Thanks
