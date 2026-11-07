@@ -3,7 +3,7 @@ import supabaseClient from '../../config/supabaseClient';
 
 export const useStaffSettingsLogic = () => {
   const [activeTab, setActiveTab] = useState('profile');
-  const [isLoading, setIsLoading] = useState(true); // Initialize as true so skeleton shows immediately
+  const [isLoading, setIsLoading] = useState(true);
 
   // Profile Form States
   const [fullName, setFullName] = useState('');
@@ -54,7 +54,6 @@ export const useStaffSettingsLogic = () => {
   const fetchStaffProfile = useCallback(async () => {
     setIsLoading(true);
     try {
-      // 1. Fetch user auth email & database profile row
       const { data: { user } } = await supabaseClient.auth.getUser();
       if (user) setEmail(user.email || '');
 
@@ -68,7 +67,6 @@ export const useStaffSettingsLogic = () => {
         profileData = data;
       }
 
-      // Fallback query if auth ID doesn't match profile row UUID
       if (!profileData) {
         const { data: fallbackData } = await supabaseClient
           .from('profiles')
@@ -81,7 +79,6 @@ export const useStaffSettingsLogic = () => {
         }
       }
 
-      // 2. Populate form states FIRST
       if (profileData) {
         setFullName(profileData.full_name || '');
         setPhone(profileData.phone || '');
@@ -121,9 +118,7 @@ export const useStaffSettingsLogic = () => {
 
       if (error) throw error;
 
-      // Log action for Admin Dashboard
       await logSystemActivity(`Staff Profile Updated: ${fullName || email}`);
-
       triggerToast('Educator profile successfully updated in database!');
     } catch (err) {
       console.error('Error updating profile:', err.message);
@@ -154,9 +149,7 @@ export const useStaffSettingsLogic = () => {
 
       if (error) throw error;
 
-      // Log action for Admin Dashboard
       await logSystemActivity(`Staff Password Changed: ${fullName || email}`);
-
       triggerToast('Password successfully updated!');
       setCurrentPassword('');
       setNewPassword('');
@@ -170,7 +163,7 @@ export const useStaffSettingsLogic = () => {
     }
   };
 
-  // Handle Avatar Upload & Log Activity
+  // Handle Avatar Upload & Base64 Persistence in Database
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -182,26 +175,40 @@ export const useStaffSettingsLogic = () => {
 
     setIsLoading(true);
     try {
-      const localUrl = URL.createObjectURL(file);
-      setAvatarUrl(localUrl);
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const base64Url = reader.result;
+        setAvatarUrl(base64Url);
 
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      const targetId = user ? user.id : '';
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        let targetId = user ? user.id : '';
 
-      await supabaseClient
-        .from('profiles')
-        .update({ avatar_url: localUrl })
-        .eq('id', targetId);
+        if (!targetId) {
+          const { data: prof } = await supabaseClient
+            .from('profiles')
+            .select('id')
+            .eq('role', 'educator')
+            .limit(1)
+            .maybeSingle();
+          targetId = prof?.id;
+        }
 
-      // Log action for Admin Dashboard
-      await logSystemActivity(`Staff Avatar Updated: ${fullName || email}`);
+        const { error } = await supabaseClient
+          .from('profiles')
+          .update({ avatar_url: base64Url })
+          .eq('id', targetId);
 
-      triggerToast('Staff avatar updated successfully!');
+        if (error) throw error;
+
+        await logSystemActivity(`Staff Avatar Updated: ${fullName || email}`);
+        triggerToast('Staff avatar updated successfully!');
+        setIsLoading(false);
+      };
     } catch (err) {
       console.error('Avatar upload error:', err.message);
       await logSystemActivity(`Staff Avatar Upload Failed: ${fullName || email}`, 'Failed');
       triggerToast('Avatar upload failed.');
-    } finally {
       setIsLoading(false);
     }
   };

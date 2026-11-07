@@ -3,7 +3,9 @@ import supabaseClient from '../../config/supabaseClient';
 
 export const useClassRosterLogic = () => {
   const [pupils, setPupils] = useState([]);
-  const [educatorClass, setEducatorClass] = useState('Grade 6');
+  const [educatorClass, setEducatorClass] = useState(() => {
+    return localStorage.getItem('selected_staff_class') || 'Grade 3';
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,7 +24,9 @@ export const useClassRosterLogic = () => {
   const [newEmail, setNewEmail] = useState('');
   const [newAddress, setNewAddress] = useState('');
   const [newMedical, setNewMedical] = useState('');
-  const [newGrade, setNewGrade] = useState('GRADE 6');
+  const [newGrade, setNewGrade] = useState(() => {
+    return localStorage.getItem('selected_staff_class') || 'GRADE 3';
+  });
 
   // Helper for generating initials avatar text
   const getInitials = (name) => {
@@ -34,37 +38,31 @@ export const useClassRosterLogic = () => {
     return name.substring(0, 2).toUpperCase();
   };
 
-  // Fetch educator profile and filter pupils strictly matching the educator's assigned grade
+  // Sync class dynamically if switched elsewhere in the session
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const storedClass = localStorage.getItem('selected_staff_class');
+      if (storedClass && storedClass !== educatorClass) {
+        setEducatorClass(storedClass);
+        setNewGrade(storedClass.toUpperCase());
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [educatorClass]);
+
+  // Fetch pupils strictly matching the global active class
   const fetchClassData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // 1. Get currently authenticated educator
       const { data: { user } } = await supabaseClient.auth.getUser();
-      
-      let targetGradeKey = 'GRADE 6';
-      let assignedClassName = 'Grade 6';
+      if (!user) throw new Error('Authentication required.');
 
-      if (user) {
-        const { data: educatorProfile } = await supabaseClient
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+      const activeClass = localStorage.getItem('selected_staff_class') || 'Grade 3';
+      setEducatorClass(activeClass);
+      setNewGrade(activeClass.toUpperCase());
 
-        if (educatorProfile) {
-          // Check educator's grade or notes for target grade
-          const searchSource = `${educatorProfile.grade || ''} ${educatorProfile.medical_notes || ''} ${educatorProfile.role_title || ''}`;
-          const match = searchSource.match(/Grade\s*(\d+)/i);
-          if (match) {
-            targetGradeKey = `GRADE ${match[1]}`.toUpperCase();
-            assignedClassName = `Grade ${match[1]}`;
-          }
-        }
-      }
-
-      setEducatorClass(assignedClassName);
-
-      // 2. Fetch all profiles from Supabase
+      // Fetch all profiles from Supabase
       const { data, error } = await supabaseClient
         .from('profiles')
         .select('*')
@@ -73,17 +71,17 @@ export const useClassRosterLogic = () => {
       if (error) throw error;
 
       if (data) {
-        // 3. Strict filtering: Must be role 'pupil' or 'student' AND match the target grade column
+        // Strict filtering: Must be role 'pupil' or 'student' AND match active class
         const filteredStudents = data.filter(item => {
           const isPupilRole = item.role === 'pupil' || item.role === 'student' || (!item.role && item.parent_guardian);
           if (!isPupilRole) return false;
 
           const studentGrade = (item.grade || item.role_title || '').toUpperCase();
-          return studentGrade.includes(targetGradeKey);
+          return studentGrade.includes(activeClass.toUpperCase());
         });
 
         const formattedPupils = filteredStudents.map((item, index) => {
-          const rawGrade = item.grade || item.role_title || targetGradeKey;
+          const rawGrade = item.grade || item.role_title || activeClass;
           const gradeClean = rawGrade.replace(/\s*\(.*\)/, '').trim().toUpperCase();
 
           return {
@@ -112,7 +110,7 @@ export const useClassRosterLogic = () => {
 
   useEffect(() => {
     fetchClassData();
-  }, [fetchClassData]);
+  }, [fetchClassData, educatorClass]);
 
   // Filter and sort pupils based on search & alphabetical options
   const filteredPupils = pupils.filter(p =>
@@ -133,11 +131,13 @@ export const useClassRosterLogic = () => {
 
     setIsSubmitting(true);
     try {
+      const activeClass = localStorage.getItem('selected_staff_class') || educatorClass;
+
       const newPupilData = {
         full_name: newName,
         role: 'pupil',
-        grade: newGrade.toUpperCase(),
-        role_title: newGrade.toUpperCase(),
+        grade: activeClass.toUpperCase(),
+        role_title: activeClass.toUpperCase(),
         parent_guardian: newParent,
         phone: newPhone || '+234 800 000 0000',
         email: newEmail || 'guardian@example.com',
@@ -155,7 +155,7 @@ export const useClassRosterLogic = () => {
 
       if (data && data.length > 0) {
         const added = data[0];
-        const rawGrade = added.grade || added.role_title || newGrade;
+        const rawGrade = added.grade || added.role_title || activeClass;
         const gradeClean = rawGrade.replace(/\s*\(.*\)/, '').trim().toUpperCase();
 
         const formattedNew = {
