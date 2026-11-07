@@ -22,7 +22,9 @@ export const useGradebookLogic = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTerm, setCurrentTerm] = useState('Term 1');
   const [academicSession, setAcademicSession] = useState('2025/2026');
-  const [educatorClass, setEducatorClass] = useState('Grade 6');
+  const [educatorClass, setEducatorClass] = useState(() => {
+    return localStorage.getItem('selected_staff_class') || 'Grade 3';
+  });
 
   // Control Flags from Academic Sessions Table
   const [isScoreEntryOpen, setIsScoreEntryOpen] = useState(true);
@@ -48,17 +50,13 @@ export const useGradebookLogic = () => {
     if (!isSilent) setIsLoading(true);
     try {
       const { data: { user } } = await supabaseClient.auth.getUser();
-      let className = 'Grade 6';
-
-      if (user) {
-        const { data: prof } = await supabaseClient
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        if (prof?.grade) className = prof.grade;
+      if (!user) {
+        throw new Error('No authenticated user session found.');
       }
-      setEducatorClass(className);
+
+      // Read active global class from localStorage, falling back to profile or default
+      const activeClass = localStorage.getItem('selected_staff_class') || 'Grade 3';
+      setEducatorClass(activeClass);
 
       // Fetch active academic session and term settings
       const { data: activeSessionRecord, error: sessionErr } = await supabaseClient
@@ -92,11 +90,11 @@ export const useGradebookLogic = () => {
         return;
       }
 
-      // Fetch Approval Status & Handle Rejection Unlocking
+      // Fetch Approval Status strictly for current active class and subject
       const { data: approvalRecord } = await supabaseClient
         .from('academic_approvals')
         .select('*')
-        .eq('class_name', className)
+        .eq('class_name', activeClass)
         .eq('subject', selectedSubject.toUpperCase())
         .eq('term', activeTerm)
         .eq('academic_session', activeSessionName)
@@ -114,7 +112,7 @@ export const useGradebookLogic = () => {
           setIsApprovedOrSubmitted(true);
         } else if (statusUpper === 'REJECTED') {
           setApprovalStatus('Rejected - Revision Required');
-          setIsApprovedOrSubmitted(false); // Unlocks the gradebook for educator edits!
+          setIsApprovedOrSubmitted(false);
         } else {
           setApprovalStatus(`Inputting ${activeTerm}`);
           setIsApprovedOrSubmitted(false);
@@ -124,17 +122,17 @@ export const useGradebookLogic = () => {
         setIsApprovedOrSubmitted(false);
       }
 
-      // Fetch Pupils
+      // Fetch Pupils strictly belonging to the active class
       const { data: pupils, error: pupilErr } = await supabaseClient
         .from('profiles')
         .select('id, full_name, avatar_url, grade')
         .eq('role', 'pupil')
-        .ilike('grade', `%${className}%`)
+        .ilike('grade', `%${activeClass}%`)
         .order('full_name', { ascending: true });
 
       if (pupilErr) throw pupilErr;
 
-      // Fetch Grades
+      // Fetch Grades for this class/subject
       const { data: existingGrades, error: gradesErr } = await supabaseClient
         .from('student_grades')
         .select('*')
@@ -151,11 +149,12 @@ export const useGradebookLogic = () => {
 
       const combined = (pupils || []).map((pupil, index) => {
         const existing = gradeMap.get(pupil.id);
+        const classPrefix = activeClass.replace(/\s+/g, '').toUpperCase();
         return {
           id: pupil.id,
           gradeRecordId: existing?.id || null,
           name: pupil.full_name,
-          rollNo: `G6-${String(index + 1).padStart(3, '0')}`,
+          rollNo: `${classPrefix}-${String(index + 1).padStart(3, '0')}`,
           avatarUrl: pupil.avatar_url || null,
           caScore: existing?.ca_score ?? '',
           examScore: existing?.exam_score ?? '',
@@ -175,6 +174,13 @@ export const useGradebookLogic = () => {
 
   useEffect(() => {
     fetchGradebookData(false);
+
+    // Listen for storage events (e.g., when active class changes in another tab/component)
+    const handleStorageChange = () => {
+      fetchGradebookData(false);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [fetchGradebookData]);
 
   const handleScoreChange = (id, field, value) => {
@@ -259,28 +265,7 @@ export const useGradebookLogic = () => {
     setIsFinalizing(true);
     try {
       const { data: { user } } = await supabaseClient.auth.getUser();
-      let educatorProfileId = user?.id;
-
-      if (user) {
-        const { data: profCheck } = await supabaseClient
-          .from('profiles')
-          .select('id')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (!profCheck) {
-          const { data: fallbackEducator } = await supabaseClient
-            .from('profiles')
-            .select('id')
-            .eq('role', 'educator')
-            .limit(1)
-            .maybeSingle();
-
-          if (fallbackEducator) {
-            educatorProfileId = fallbackEducator.id;
-          }
-        }
-      }
+      if (!user) throw new Error('Authentication required.');
 
       for (const g of calculatedGrades) {
         const payload = {
@@ -305,7 +290,7 @@ export const useGradebookLogic = () => {
       }
 
       const approvalPayload = {
-        educator_id: educatorProfileId || null,
+        educator_id: user.id,
         class_name: educatorClass,
         subject: selectedSubject.toUpperCase(),
         status: 'PENDING',
@@ -357,6 +342,7 @@ export const useGradebookLogic = () => {
     showFinalizeModal, setShowFinalizeModal,
     showToast, toastMessage,
     handleScoreChange, handleRemarksChange,
-    handleSaveDraft, handleFinalizeGrades, handleExportCSV
+    handleSaveDraft, handleFinalizeGrades, handleExportCSV,
+    educatorClass
   };
 };
