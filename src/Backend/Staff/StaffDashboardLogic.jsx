@@ -3,8 +3,8 @@ import supabaseClient from '../../config/supabaseClient';
 
 export const useStaffDashboardLogic = () => {
   const [userProfile, setUserProfile] = useState(null);
-  const [selectedClass, setSelectedClass] = useState('Grade 6');
-  const [assignedClasses, setAssignedClasses] = useState(['Grade 6']);
+  const [selectedClass, setSelectedClass] = useState('');
+  const [assignedClasses, setAssignedClasses] = useState([]);
   
   const [totalStudents, setTotalStudents] = useState(0);
   const [todayAttendancePercent, setTodayAttendancePercent] = useState(0);
@@ -17,13 +17,12 @@ export const useStaffDashboardLogic = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showClassDropdown, setShowClassDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showRedirectNotice, setShowRedirectNotice] = useState(false);
 
-  const fetchDashboardData = useCallback(async () => {
+  // 1. Initial Load: Fetch Profile & Assigned Classes
+  const initStaffProfile = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabaseClient.auth.getUser();
-      let activeClass = 'Grade 6';
       let prof = null;
 
       if (user) {
@@ -48,33 +47,60 @@ export const useStaffDashboardLogic = () => {
 
       if (prof) {
         setUserProfile(prof);
-        if (prof.medical_notes && prof.medical_notes.includes('Grade')) {
-          const match = prof.medical_notes.match(/Grade\s*\d+/i);
-          if (match) activeClass = match[0];
-        } else if (prof.grade) {
-          activeClass = prof.grade;
+
+        // Parse assigned classes list from database
+        let classesList = [];
+        const rawSource = prof.assigned_classes || prof.grade;
+
+        if (Array.isArray(rawSource)) {
+          classesList = rawSource;
+        } else if (typeof rawSource === 'string') {
+          classesList = rawSource.split(',').map(c => c.trim()).filter(Boolean);
         }
-        setSelectedClass(activeClass);
-        setAssignedClasses([activeClass, 'Grade 3', 'Grade 5']);
+
+        if (classesList.length === 0) {
+          classesList = ['Grade 6'];
+        }
+
+        setAssignedClasses(classesList);
+
+        // Check for saved active class in localStorage
+        const savedClass = localStorage.getItem('selected_staff_class');
+        if (savedClass && classesList.includes(savedClass)) {
+          setSelectedClass(savedClass);
+        } else {
+          setSelectedClass(classesList[0]);
+          localStorage.setItem('selected_staff_class', classesList[0]);
+        }
       }
+    } catch (err) {
+      console.error('Error initializing staff profile:', err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-      const todayDate = new Date().toISOString().split('T')[0];
+  // 2. Fetch Data for currently selectedClass
+  const fetchClassMetrics = useCallback(async (currentClass) => {
+    if (!currentClass) return;
+    const todayDate = new Date().toISOString().split('T')[0];
 
-      // 1. Fetch Total Students in Educator's Class
+    try {
+      // Fetch Total Students in Selected Class
       const { count: studentCount, error: studentErr } = await supabaseClient
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('role', 'pupil')
-        .ilike('grade', `%${activeClass}%`);
+        .ilike('grade', `%${currentClass}%`);
 
       if (!studentErr) setTotalStudents(studentCount || 0);
 
-      // 2. Fetch Today's Attendance Percentage
+      // Fetch Today's Attendance Percentage for Selected Class
       const { data: attData } = await supabaseClient
         .from('attendance')
         .select('status')
         .eq('date', todayDate)
-        .eq('class_name', activeClass);
+        .ilike('class_name', `%${currentClass}%`);
 
       if (attData && attData.length > 0) {
         const presentOrLate = attData.filter(a => 
@@ -85,15 +111,15 @@ export const useStaffDashboardLogic = () => {
         setTodayAttendancePercent(0);
       }
 
-      // 3. Fetch Pending Grades (Draft subjects from student_grades where is_finalized = false)
+      // Fetch Pending Draft Grades for Selected Class
       const { data: draftGrades, error: draftErr } = await supabaseClient
         .from('student_grades')
         .select('subject, term, academic_session, is_finalized')
-        .eq('is_finalized', false);
+        .eq('is_finalized', false)
+        .ilike('class_name', `%${currentClass}%`);
 
       if (draftErr) console.error('Error fetching draft grades:', draftErr.message);
 
-      // Extract unique subjects saved as draft
       const uniqueDraftSubjects = draftGrades 
         ? Array.from(new Set(draftGrades.map(g => g.subject)))
         : [];
@@ -115,11 +141,11 @@ export const useStaffDashboardLogic = () => {
 
       setPendingGradingList(mappedPendingGrades);
 
-      // 4. Fetch Schedule/Timetable
+      // Fetch Schedule/Timetable for Selected Class
       const { data: scheduleData } = await supabaseClient
         .from('schedules')
         .select('*')
-        .ilike('class_name', `%${activeClass}%`)
+        .ilike('class_name', `%${currentClass}%`)
         .order('start_time', { ascending: true });
 
       if (scheduleData && scheduleData.length > 0) {
@@ -128,7 +154,7 @@ export const useStaffDashboardLogic = () => {
           time: s.start_time || '08:30 AM',
           title: s.subject_name || s.title,
           subtitle: s.topic || 'Class Session',
-          classTag: activeClass,
+          classTag: currentClass,
           badgeBg: 'bg-sky-100 text-sky-700'
         })));
       } else {
@@ -137,29 +163,26 @@ export const useStaffDashboardLogic = () => {
       }
 
     } catch (err) {
-      console.error('Error fetching dashboard data:', err.message);
-    } finally {
-      setIsLoading(false);
+      console.error('Error loading class metrics:', err.message);
     }
   }, []);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+    initStaffProfile();
+  }, [initStaffProfile]);
 
+  useEffect(() => {
+    if (selectedClass) {
+      fetchClassMetrics(selectedClass);
+    }
+  }, [selectedClass, fetchClassMetrics]);
+
+  // Handle Class Switcher Select
   const handleClassSelect = (className) => {
     setShowClassDropdown(false);
-    const activeDefault = selectedClass;
-
-    if (className !== activeDefault) {
+    if (className !== selectedClass) {
       setSelectedClass(className);
-      setShowRedirectNotice(true);
-      setTimeout(() => {
-        setSelectedClass(activeDefault);
-        setShowRedirectNotice(false);
-      }, 1800);
-    } else {
-      setSelectedClass(activeDefault);
+      localStorage.setItem('selected_staff_class', className);
     }
   };
 
@@ -178,7 +201,6 @@ export const useStaffDashboardLogic = () => {
     setShowClassDropdown,
     showNotifications,
     setShowNotifications,
-    showRedirectNotice,
     handleClassSelect,
   };
 };

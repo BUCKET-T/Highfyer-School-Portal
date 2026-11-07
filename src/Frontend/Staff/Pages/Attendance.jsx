@@ -49,7 +49,7 @@ const Attendance = () => {
               <span className="text-sky-600">({educatorClass})</span>
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 font-medium">
-              Manage daily attendance and localized remarks.
+              Manage daily attendance and localized remarks for {educatorClass}.
             </p>
           </div>
 
@@ -195,7 +195,7 @@ const Attendance = () => {
                 {filteredGrades.length === 0 ? (
                   <tr>
                     <td colSpan="5" className="py-12 text-center text-xs font-extrabold text-slate-400">
-                      No pupil attendance records found.
+                      No pupil attendance records found for {educatorClass}.
                     </td>
                   </tr>
                 ) : (
@@ -299,15 +299,15 @@ const Attendance = () => {
                           </div>
                         </td>
 
-                        <td className="py-4 px-4 whitespace-nowrap">
+                        <td className="py-4 px-4">
                           <div className="flex items-center space-x-2">
-                            <div className="relative flex-1">
+                            <div className="relative flex-1 min-w-[140px]">
                               <input
                                 type="text"
                                 placeholder="Type reason or select preset..."
                                 value={pupil.remarks}
                                 onChange={(e) => handleRemarksChange(pupil.id, e.target.value)}
-                                className="bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2 text-xs font-semibold text-brand-navy w-44 sm:w-52 focus:outline-none focus:border-sky-500 focus:bg-white transition-all shadow-inner"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2 text-xs font-semibold text-brand-navy focus:outline-none focus:border-sky-500 focus:bg-white transition-all shadow-inner"
                               />
                               {pupil.remarks && (
                                 <button
@@ -320,8 +320,8 @@ const Attendance = () => {
                                 </button>
                               )}
                             </div>
-
-                            <div className="relative">
+                        
+                            <div className="relative flex-shrink-0">
                               <button
                                 type="button"
                                 onClick={() => setActivePresetDropdownId(isPresetOpen ? null : pupil.id)}
@@ -333,7 +333,7 @@ const Attendance = () => {
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                                 </svg>
                               </button>
-
+                        
                               <AnimatePresence>
                                 {isPresetOpen && (
                                   <motion.div
@@ -363,15 +363,14 @@ const Attendance = () => {
                                 )}
                               </AnimatePresence>
                             </div>
-
                           </div>
-                        </td>
+                        </td>                        
 
                         <td className="py-4 px-4 whitespace-nowrap text-right">
                           <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                            pupil.status === 'present' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
-                            pupil.status === 'late' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
-                            pupil.status === 'absent' ? 'bg-rose-50 text-rose-500 border border-rose-200' :
+                            pupil.status === 'Present' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+                            pupil.status === 'Late' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
+                            pupil.status === 'Absent' ? 'bg-rose-50 text-rose-500 border border-rose-200' :
                             'bg-sky-50 text-sky-600 border border-sky-200'
                           }`}>
                             {pupil.status}
@@ -403,7 +402,7 @@ const Attendance = () => {
               </div>
               <div className="space-y-1">
                 <h3 className="text-lg font-black text-brand-navy">Register Saved & Submitted!</h3>
-                <p className="text-xs text-slate-500 font-medium">Attendance register saved successfully.</p>
+                <p className="text-xs text-slate-500 font-medium">Attendance register for {educatorClass} saved successfully.</p>
               </div>
               <button type="button" onClick={() => setShowSubmitModal(false)} className="w-full bg-sky-500 hover:bg-sky-600 text-white font-extrabold py-3 rounded-2xl text-xs shadow-md transition-all cursor-pointer">
                 Okay, Thanks

@@ -37,6 +37,11 @@ const StaffSettings = () => {
     return <SkeletonStaffSettings />;
   }
 
+  // Generate dynamic fallback initials from full name and surname
+  const educatorInitials = fullName
+    ? fullName.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase()
+    : 'ED';
+
   return (
     <div className="w-full min-h-screen bg-slate-50/60 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
@@ -151,21 +156,27 @@ const StaffSettings = () => {
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 sm:space-x-5">
-                    <div className="relative inline-block">
-                      {avatarUrl ? (
+                    <div className="relative inline-block w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-sky-100 shadow-inner overflow-hidden flex items-center justify-center bg-gradient-to-tr from-sky-500 to-indigo-600">
+                      {avatarUrl && avatarUrl.trim() !== '' ? (
                         <img
                           src={avatarUrl}
                           alt={fullName}
-                          className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-sky-100 shadow-inner"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
                         />
-                      ) : (
-                        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 text-white font-black text-xl flex items-center justify-center border-4 border-sky-100 shadow-inner">
-                          {fullName ? fullName.split(' ').map(n => n[0]).join('').slice(0, 2) : 'ED'}
+                      ) : null}
+
+                      {(!avatarUrl || avatarUrl.trim() === '') && (
+                        <div className="w-full h-full text-white font-black text-xl flex items-center justify-center">
+                          {educatorInitials}
                         </div>
                       )}
+
                       <label
                         htmlFor="avatar-upload"
-                        className="absolute bottom-1 right-1 w-9 h-9 bg-sky-500 hover:bg-sky-600 text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all"
+                        className="absolute bottom-1 right-1 w-9 h-9 bg-sky-500 hover:bg-sky-600 text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all z-10"
                         title="Upload Custom Image"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">

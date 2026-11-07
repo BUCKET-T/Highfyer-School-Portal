@@ -7,7 +7,12 @@ export const useAttendanceLogic = () => {
   const [isSaving, setIsSaving] = useState(false);
   
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [educatorClass, setEducatorClass] = useState('Grade 6');
+
+  // Read active class directly from localStorage set by the Dashboard
+  const [educatorClass, setEducatorClass] = useState(() => {
+    return localStorage.getItem('selected_staff_class') || 'Grade 6';
+  });
+
   const [currentTerm, setCurrentTerm] = useState('Term 1');
   const [academicSession, setAcademicSession] = useState('2025/2026');
 
@@ -36,22 +41,23 @@ export const useAttendanceLogic = () => {
     setTimeout(() => setShowToast(false), 4000);
   };
 
+  // Sync class dynamically if switched elsewhere in the session
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const storedClass = localStorage.getItem('selected_staff_class');
+      if (storedClass && storedClass !== educatorClass) {
+        setEducatorClass(storedClass);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [educatorClass]);
+
+  // Fetch Attendance Records for current educatorClass and selectedDate
   const fetchAttendanceData = useCallback(async (isSilent = false) => {
+    if (!educatorClass) return;
     if (!isSilent) setIsLoading(true);
     try {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      let className = 'Grade 6';
-
-      if (user) {
-        const { data: prof } = await supabaseClient
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        if (prof?.grade) className = prof.grade;
-      }
-      setEducatorClass(className);
-
       // Fetch active academic session and term settings
       const { data: activeSessionRecord } = await supabaseClient
         .from('academic_sessions')
@@ -68,22 +74,22 @@ export const useAttendanceLogic = () => {
       setCurrentTerm(activeTerm);
       setAcademicSession(activeSessionName);
 
-      // Fetch Pupils in class
+      // Fetch Pupils in selected class
       const { data: pupilProfiles, error: pupilErr } = await supabaseClient
         .from('profiles')
         .select('id, full_name, avatar_url, grade')
         .eq('role', 'pupil')
-        .ilike('grade', `%${className}%`)
+        .ilike('grade', `%${educatorClass}%`)
         .order('full_name', { ascending: true });
 
       if (pupilErr) throw pupilErr;
 
-      // Fetch Attendance records for selected date
+      // Fetch Attendance records for selected date & class
       const { data: existingAttendance, error: attErr } = await supabaseClient
         .from('attendance')
         .select('*')
         .eq('date', selectedDate)
-        .eq('class_name', className);
+        .ilike('class_name', `%${educatorClass}%`);
 
       if (attErr) throw attErr;
 
@@ -98,8 +104,8 @@ export const useAttendanceLogic = () => {
           id: pupil.id,
           attendanceRecordId: existing?.id || null,
           name: pupil.full_name,
-          rollNo: `G6-${String(index + 1).padStart(3, '0')}`,
-          avatar: pupil.avatar_url || null, // Strictly from database profile
+          rollNo: `${educatorClass.replace(/\s+/g, '')}-${String(index + 1).padStart(3, '0')}`,
+          avatar: pupil.avatar_url || null,
           status: existing?.status || 'Present',
           remarks: existing?.remarks || ''
         };
@@ -112,7 +118,7 @@ export const useAttendanceLogic = () => {
     } finally {
       if (!isSilent) setIsLoading(false);
     }
-  }, [selectedDate]);
+  }, [educatorClass, selectedDate]);
 
   useEffect(() => {
     fetchAttendanceData();
@@ -173,7 +179,7 @@ export const useAttendanceLogic = () => {
     }
   };
 
-  const filteredPupils = pupils.filter(pupil => {
+  const filteredGrades = pupils.filter(pupil => {
     const matchesSearch = pupil.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           pupil.rollNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           pupil.remarks.toLowerCase().includes(searchQuery.toLowerCase());
@@ -189,7 +195,7 @@ export const useAttendanceLogic = () => {
   const attendancePercentage = totalCount > 0 ? Math.round(((presentCount + lateCount) / totalCount) * 100) : 0;
 
   return {
-    pupils, filteredGrades: filteredPupils, isLoading, isSaving,
+    pupils, filteredGrades, isLoading, isSaving,
     selectedDate, setSelectedDate, educatorClass, currentTerm, academicSession,
     searchQuery, setSearchQuery, statusFilter, setStatusFilter,
     showStatusFilterDropdown, setShowStatusFilterDropdown,

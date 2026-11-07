@@ -9,6 +9,7 @@ export const useSidebarLogic = () => {
   });
   const [hasPendingApprovals, setHasPendingApprovals] = useState(false);
   const [hasNewBroadcast, setHasNewBroadcast] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchSidebarData = useCallback(async () => {
     try {
@@ -27,26 +28,30 @@ export const useSidebarLogic = () => {
         });
       }
 
-      // 2. Check for Pending Academic Approvals & compare with last viewed timestamp
-      const { data: recentApprovals } = await supabaseClient
+      // 2. Check for Pending Academic Approvals
+// 2. Check for Pending Academic Approvals
+      const { data: recentApprovals, error: approvalErr } = await supabaseClient
         .from('academic_approvals')
-        .select('created_at')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
+        .select('submitted_at, status')
+        .ilike('status', 'PENDING')
+        .order('submitted_at', { ascending: false })
         .limit(1);
 
+      if (approvalErr) {
+        console.error("Supabase approval fetch error:", approvalErr.message);
+      }
+
       if (recentApprovals && recentApprovals.length > 0) {
-        const latestApprovalTime = new Date(recentApprovals[0].created_at).getTime();
-        const viewedApprovalTime = localStorage.getItem('approvals_viewed_at') 
-          ? new Date(localStorage.getItem('approvals_viewed_at')).getTime() 
-          : 0;
+        const latestApprovalTime = new Date(recentApprovals[0].submitted_at).getTime();
+        const storedViewedTime = localStorage.getItem('approvals_viewed_at');
+        const viewedApprovalTime = storedViewedTime ? new Date(storedViewedTime).getTime() : 0;
 
         setHasPendingApprovals(latestApprovalTime > viewedApprovalTime);
       } else {
         setHasPendingApprovals(false);
       }
 
-      // 3. Check for Recent School Broadcasts & compare with last viewed timestamp
+      // 3. Check for Recent School Broadcasts
       const { data: recentBroadcasts } = await supabaseClient
         .from('school_broadcasts')
         .select('created_at')
@@ -66,11 +71,36 @@ export const useSidebarLogic = () => {
 
     } catch (err) {
       console.error('Error loading sidebar data:', err.message);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
     fetchSidebarData();
+
+    // Set up Supabase Realtime channel to listen for new submissions instantly
+    const channel = supabaseClient
+      .channel('admin-sidebar-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'academic_approvals' },
+        () => {
+          fetchSidebarData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'school_broadcasts' },
+        () => {
+          fetchSidebarData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
   }, [fetchSidebarData]);
 
   // Handlers to clear dots when components are opened
@@ -101,6 +131,7 @@ export const useSidebarLogic = () => {
     hasNewBroadcast,
     handleOpenApprovals,
     handleOpenBroadcasts,
-    handleLogout
+    handleLogout,
+    isLoading
   };
 };

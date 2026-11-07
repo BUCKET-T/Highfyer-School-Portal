@@ -17,6 +17,9 @@ import {
 import schoolLogo from '../../../assets/logo.png';
 import { useSidebarLogic } from '../../../Backend/Admin/AdminSidebarLogic';
 
+// Import Skeleton Component (adjust path if needed to match your directory structure)
+import SkeletonAdminSidebar from '../../Shared/Admin/SkeletonAdminSidebar';
+
 const AdminSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -29,8 +32,14 @@ const AdminSidebar = () => {
     hasNewBroadcast,
     handleOpenApprovals,
     handleOpenBroadcasts,
-    handleLogout
+    handleLogout,
+    isLoading
   } = useSidebarLogic();
+
+  // Render Skeleton Loader during initial data fetch
+  if (isLoading) {
+    return <SkeletonAdminSidebar />;
+  }
 
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);

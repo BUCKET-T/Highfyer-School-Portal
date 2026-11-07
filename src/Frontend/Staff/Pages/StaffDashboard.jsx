@@ -21,7 +21,6 @@ const StaffDashboard = () => {
     setShowClassDropdown,
     showNotifications,
     setShowNotifications,
-    showRedirectNotice,
     handleClassSelect,
   } = useStaffDashboardLogic();
 
@@ -41,9 +40,13 @@ const StaffDashboard = () => {
     return <SkeletonDashboard />;
   }
 
-  const educatorFullName = userProfile?.full_name ? `Mr. ${userProfile.full_name}` : 'Temitayo Ojo';
-  const educatorInitials = educatorFullName
+  // Generate educator full name and dynamic fallback initials from first & last name
+  const rawFullName = userProfile?.full_name || 'Temitayo Ojo';
+  const educatorFullName = `Mr. ${rawFullName.replace(/^Mr\.\s*/i, '')}`;
+  
+  const educatorInitials = rawFullName
     .split(' ')
+    .filter(Boolean)
     .map(n => n[0])
     .join('')
     .substring(0, 2)
@@ -67,51 +70,60 @@ const StaffDashboard = () => {
           {/* Controls & Profile Group */}
           <div className="flex items-center flex-wrap gap-3">
             
-            {/* Class Switcher Dropdown */}
+            {/* Conditional Class Switcher / Static Display */}
             <div className="relative w-48 sm:w-56">
-              <button
-                type="button"
-                onClick={() => setShowClassDropdown(!showClassDropdown)}
-                className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-2xl px-4 py-3 text-xs font-extrabold text-brand-navy flex items-center justify-between transition-all cursor-pointer shadow-sm"
-              >
-                <div className="flex items-center space-x-2">
-                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
+              {assignedClasses.length > 1 ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowClassDropdown(!showClassDropdown)}
+                    className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-2xl px-4 py-3 text-xs font-extrabold text-brand-navy flex items-center justify-between transition-all cursor-pointer shadow-sm"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
+                      <span>{selectedClass}</span>
+                    </div>
+                    <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${showClassDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  <AnimatePresence>
+                    {showClassDropdown && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 mt-2 w-full bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-40"
+                      >
+                        <div className="px-3.5 py-1 text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                          Switch Assigned Class
+                        </div>
+                        {assignedClasses.map((cls) => (
+                          <button
+                            key={cls}
+                            type="button"
+                            onClick={() => handleClassSelect(cls)}
+                            className={`w-full text-left px-4 py-2.5 text-xs font-extrabold transition-colors cursor-pointer ${
+                              selectedClass === cls
+                                ? 'bg-sky-50 text-sky-600'
+                                : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            {cls}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </>
+              ) : (
+                <div className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-extrabold text-brand-navy flex items-center space-x-2 shadow-sm">
+                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />
                   <span>{selectedClass}</span>
                 </div>
-                <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${showClassDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              <AnimatePresence>
-                {showClassDropdown && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-full bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-40"
-                  >
-                    <div className="px-3.5 py-1 text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                      Switch Assigned Class
-                    </div>
-                    {assignedClasses.map((cls) => (
-                      <button
-                        key={cls}
-                        type="button"
-                        onClick={() => handleClassSelect(cls)}
-                        className={`w-full text-left px-4 py-2.5 text-xs font-extrabold transition-colors cursor-pointer ${
-                          selectedClass === cls
-                            ? 'bg-sky-50 text-sky-600'
-                            : 'text-slate-600 hover:bg-slate-50'
-                        }`}
-                      >
-                        {cls} {cls !== selectedClass && <span className="text-[10px] text-amber-500 font-bold ml-1">(Demo Sample Only)</span>}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              )}
             </div>
 
             {/* New Assignment Button */}
@@ -167,20 +179,25 @@ const StaffDashboard = () => {
               </AnimatePresence>
             </div>
 
-            {/* Database-Connected Teacher Avatar */}
+            {/* Dynamic Teacher Avatar with Initials Fallback */}
             <button
               type="button"
               onClick={() => navigate('/staff/settings')}
-              className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl overflow-hidden border-2 border-sky-400 p-0.5 bg-white shadow-sm transition-all hover:scale-105 cursor-pointer flex-shrink-0"
+              className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl overflow-hidden border-2 border-sky-400 p-0.5 bg-white shadow-sm transition-all hover:scale-105 cursor-pointer flex-shrink-0 flex items-center justify-center"
               title="Teacher Profile"
             >
-              {userProfile?.avatar_url ? (
+              {userProfile?.avatar_url && userProfile.avatar_url.trim() !== '' ? (
                 <img
                   src={userProfile.avatar_url}
                   alt={educatorFullName}
                   className="w-full h-full rounded-xl object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
                 />
-              ) : (
+              ) : null}
+
+              {(!userProfile?.avatar_url || userProfile.avatar_url.trim() === '') && (
                 <div className="w-full h-full bg-sky-500 text-white font-black text-xs rounded-xl flex items-center justify-center">
                   {educatorInitials}
                 </div>
@@ -190,26 +207,8 @@ const StaffDashboard = () => {
           </div>
         </div>
 
-        {/* Redirect Notice Banner */}
-        <AnimatePresence>
-          {showRedirectNotice && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl text-xs font-bold flex items-center space-x-3 shadow-sm"
-            >
-              <svg className="w-5 h-5 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <span>Demo record sets are currently initialized for <strong>{selectedClass}</strong>. Redirecting back to active class dataset...</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Metric Stat Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-          
           <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-3 relative overflow-hidden">
             <div className="flex items-center justify-between">
               <div className="w-11 h-11 sm:w-12 sm:h-12 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center flex-shrink-0">
@@ -265,12 +264,10 @@ const StaffDashboard = () => {
               <h2 className="text-2xl sm:text-3xl font-black text-brand-navy">{upcomingLessonsCount}</h2>
             </div>
           </div>
-
         </div>
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
-          
           <div className="lg:col-span-8 space-y-5 sm:space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-lg sm:text-xl font-black text-brand-navy">Pending Grading</h2>
@@ -342,7 +339,6 @@ const StaffDashboard = () => {
           </div>
 
           <div className="lg:col-span-4 space-y-6">
-            
             <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-6">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <h2 className="text-base sm:text-lg font-black text-brand-navy">Today's Schedule</h2>
@@ -385,12 +381,10 @@ const StaffDashboard = () => {
               </div>
 
               <p className="text-xs font-semibold text-slate-300 leading-relaxed italic">
-                "Staff meeting in the auditorium today at 3:30 PM. Agenda: Sports Day planning & Term C.A submissions."
+                "Staff should plan properly and implement the necessary input for pupils Term C.A and Examination before final submissions."
               </p>
             </div>
-
           </div>
-
         </div>
 
       </div>
