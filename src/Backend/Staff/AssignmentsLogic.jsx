@@ -11,6 +11,11 @@ export const useAssignmentsLogic = () => {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('Status');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
+  // Active Class State
+  const [educatorClass, setEducatorClass] = useState(() => {
+    return localStorage.getItem('selected_staff_class') || 'Grade 3';
+  });
+
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -32,22 +37,10 @@ export const useAssignmentsLogic = () => {
   };
 
   const curriculumSubjects = [
-    'Numeracy',
-    'Literacy',
-    'Rhymes',
-    'General Paper',
-    'CRS',
-    'Mathematics',
-    'English language',
-    'Basic science',
-    'Social studies',
-    'History',
-    'Yoruba',
-    'Creative & Cultural Arts',
-    'Vocational Studies',
-    'Security Education',
-    'Quantitative Reasoning',
-    'Verbal Reasoning',
+    'Numeracy', 'Literacy', 'Rhymes', 'General Paper', 'CRS',
+    'Mathematics', 'English language', 'Basic science', 'Social studies',
+    'History', 'Yoruba', 'Creative & Cultural Arts', 'Vocational Studies',
+    'Security Education', 'Quantitative Reasoning', 'Verbal Reasoning',
     'Physical Health Education'
   ];
 
@@ -66,13 +59,29 @@ export const useAssignmentsLogic = () => {
     return 'bg-rose-100 text-rose-700';
   };
 
-  // Fetch Assignments
+  // Sync class dynamically if switched elsewhere in the session
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const storedClass = localStorage.getItem('selected_staff_class');
+      if (storedClass && storedClass !== educatorClass) {
+        setEducatorClass(storedClass);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [educatorClass]);
+
+  // Fetch Assignments strictly for the active class
   const fetchAssignments = useCallback(async (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
     try {
+      const activeClass = localStorage.getItem('selected_staff_class') || 'Grade 3';
+      setEducatorClass(activeClass);
+
       const { data: assignmentsData, error } = await supabaseClient
         .from('assignments')
         .select('*')
+        .ilike('grade_level', `%${activeClass}%`)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -106,7 +115,7 @@ export const useAssignmentsLogic = () => {
 
   useEffect(() => {
     fetchAssignments(false);
-  }, [fetchAssignments]);
+  }, [fetchAssignments, educatorClass]);
 
   // Create New Assignment Task
   const handleCreateTask = async (e) => {
@@ -116,25 +125,17 @@ export const useAssignmentsLogic = () => {
     setIsSubmitting(true);
     try {
       const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) throw new Error('Authentication required.');
 
-      let creatorId = null;
-      if (user) {
-        const { data: profile } = await supabaseClient
-          .from('profiles')
-          .select('id')
-          .eq('id', user.id)
-          .single();
-
-        if (profile) creatorId = profile.id;
-      }
+      const activeClass = localStorage.getItem('selected_staff_class') || 'Grade 3';
 
       const newRecord = {
         title: newTaskTitle,
         subject: newTaskSubject.toUpperCase(),
         description: newTaskGuidelines || 'Follow instructions provided by instructor.',
-        grade_level: '',
+        grade_level: activeClass,
         due_date: new Date(newTaskDueDate).toISOString(),
-        created_by: creatorId,
+        created_by: user.id,
         status: 'ACTIVE'
       };
 
@@ -197,6 +198,7 @@ export const useAssignmentsLogic = () => {
     activeTasksCount,
     completedTasksCount,
     showToast,
-    toastMessage
+    toastMessage,
+    educatorClass
   };
 };
