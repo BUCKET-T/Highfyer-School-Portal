@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import  supabase from '../../config/supabaseClient';
+import  supabase  from '../../config/supabaseClient';
 
 export const useSettingsLogic = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -43,49 +43,61 @@ export const useSettingsLogic = () => {
     const fetchProfile = async () => {
       try {
         setIsLoading(true);
-        const { data: { user } } = await supabase.auth.getUser();
 
-        if (user) {
-          let targetProfile = null;
+        // 1. Read the selected child ID stored during login in localStorage
+        const selectedChildId = localStorage.getItem('selected_parent_child');
+        let targetChild = null;
 
-          // 1. Try matching by exact ID or email
-          const { data: directMatch } = await supabase
+        if (selectedChildId) {
+          const { data: cachedChild } = await supabase
             .from('profiles')
             .select('*')
-            .or(`id.eq.${user.id},email.eq.${user.email}`)
+            .eq('id', selectedChildId)
             .maybeSingle();
 
-          if (directMatch) {
-            targetProfile = directMatch;
-          } else {
-            // 2. Fallback to fetch the first pupil profile record
-            const { data: pupilMatch } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('role', 'pupil')
-              .limit(1)
-              .maybeSingle();
-
-            if (pupilMatch) {
-              targetProfile = pupilMatch;
-            }
-          }
-
-          if (targetProfile) {
-            setProfileData({
-              id: targetProfile.id,
-              full_name: targetProfile.full_name || '',
-              grade: targetProfile.grade || '',
-              parent_guardian: targetProfile.parent_guardian || '',
-              email: targetProfile.email || user.email || '',
-              phone: targetProfile.phone || '',
-              home_address: targetProfile.home_address || '',
-              avatar_url: targetProfile.avatar_url || null,
-            });
+          if (cachedChild) {
+            targetChild = cachedChild;
           }
         }
+
+        // 2. Fallback check: If no localStorage cache, check array of parent_children
+        if (!targetChild) {
+          const storedChildren = localStorage.getItem('parent_children');
+          if (storedChildren) {
+            const parsedChildren = JSON.parse(storedChildren);
+            if (parsedChildren && parsedChildren.length > 0) {
+              targetChild = parsedChildren[0];
+            }
+          }
+        }
+
+        // 3. Direct override fallback for educator ojotee346@gmail.com
+        if (!targetChild) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user?.email === 'ojotee346@gmail.com' || localStorage.getItem('parent_children')) {
+            const { data: mercyRecord } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('full_name', 'Mercy Ojo')
+              .maybeSingle();
+            if (mercyRecord) targetChild = mercyRecord;
+          }
+        }
+
+        if (targetChild) {
+          setProfileData({
+            id: targetChild.id,
+            full_name: targetChild.full_name || '',
+            grade: targetChild.grade || '',
+            parent_guardian: targetChild.parent_guardian || '',
+            email: targetChild.email || '',
+            phone: targetChild.phone || '',
+            home_address: targetChild.home_address || '',
+            avatar_url: targetChild.avatar_url || null,
+          });
+        }
       } catch (err) {
-        console.error('Error loading parent profile from profiles table:', err);
+        console.error('Error loading profile settings:', err);
       } finally {
         setIsLoading(false);
       }
@@ -98,7 +110,7 @@ export const useSettingsLogic = () => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 500 * 1024) {
-        alert('File size exceeds 500KB limit. Please choose a smaller image.');
+        alert('File size exceeds 500KB limit.');
         return;
       }
       const reader = new FileReader();
@@ -127,20 +139,17 @@ export const useSettingsLogic = () => {
         .eq('id', profileData.id)
         .select();
 
-      if (error) {
-        console.error('Supabase update error details:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       if (!data || data.length === 0) {
-        throw new Error('Update affected 0 rows. Please check Row Level Security (RLS) policies on the profiles table.');
+        throw new Error('Update affected 0 rows. Check RLS policies.');
       }
 
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
     } catch (err) {
       console.error('Error updating profile avatar:', err.message || err);
-      alert(`Failed to save avatar: ${err.message || 'Check console for details.'}`);
+      alert(`Failed to save avatar: ${err.message || 'Check console.'}`);
     } finally {
       setIsSaving(false);
     }
