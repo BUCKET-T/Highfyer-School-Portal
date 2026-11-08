@@ -26,7 +26,6 @@ export const useParentLoginLogic = () => {
     setToast({ message: '', type: '', visible: false });
 
     try {
-      // 1. Clear stale cache
       localStorage.removeItem('selected_parent_child');
       localStorage.removeItem('parent_children');
       localStorage.clear();
@@ -35,7 +34,7 @@ export const useParentLoginLogic = () => {
 
       let parentProfile = null;
 
-      // 2. Authenticate credentials via Supabase Auth
+      // 1. Authenticate credentials via Supabase Auth or temp password fallback
       const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
         email: emailOrId,
         password: password,
@@ -49,7 +48,6 @@ export const useParentLoginLogic = () => {
           .maybeSingle();
         parentProfile = prof;
       } else {
-        // Fallback check for temp_password users
         const { data: profileMatches, error: profileErr } = await supabaseClient
           .from('profiles')
           .select('*')
@@ -68,36 +66,19 @@ export const useParentLoginLogic = () => {
         throw new Error('User profile record not found.');
       }
 
-      // 3. Query linked pupils securely via the relational junction table
-      const { data: links, error: linkErr } = await supabaseClient
-        .from('parent_pupil_links')
-        .select('pupil_id')
-        .eq('parent_id', parentProfile.id);
+      // 2. Strict Check: Query ONLY the junction table via RPC
+      const { data: matchedChildren, error: rpcErr } = await supabaseClient
+        .rpc('get_parent_wards', { p_parent_id: parentProfile.id });
 
-      if (linkErr) {
+      if (rpcErr) {
         throw new Error('Failed to verify linked ward records.');
       }
 
-      let matchedChildren = [];
-      if (links && links.length > 0) {
-        const pupilIds = links.map(l => l.pupil_id);
-        const { data: pupils, error: pupilErr } = await supabaseClient
-          .from('profiles')
-          .select('id, full_name, grade, avatar_url, roll_number, parent_guardian, role')
-          .in('id', pupilIds)
-          .eq('role', 'pupil');
-
-        if (!pupilErr && pupils) {
-          matchedChildren = pupils;
-        }
-      }
-
-      // 4. Strict Enforcement: Block unlinked emails completely
+      // 3. Strict Enforcement: Block if no explicit entry exists in parent_pupil_links
       if (!matchedChildren || matchedChildren.length === 0) {
         throw new Error('Access denied: This email is not linked to any registered pupil ward.');
       }
 
-      // Cache verified child records
       localStorage.setItem('parent_children', JSON.stringify(matchedChildren));
       localStorage.setItem('selected_parent_child', matchedChildren[0].id);
 
