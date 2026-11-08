@@ -14,11 +14,13 @@ import {
   Bell
 } from 'lucide-react';
 import { useAdminDashboardLogic } from '../../../Backend/Admin/AdminDashboardLogic';
+import SkeletonAdminDashboard from '../../Shared/Admin/SkeletonAdminDashboard';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const {
     activeSessionText,
+    isLoadingLogs,
     totalPupils,
     activeStaff,
     adminAvatar,
@@ -27,6 +29,10 @@ const AdminDashboard = () => {
     staffActivities,
     trafficData
   } = useAdminDashboardLogic();
+
+  if (isLoadingLogs) {
+    return <SkeletonAdminDashboard />;
+  }
 
   // Construct SVG path dynamically from derived trafficData
   const maxTraffic = Math.max(...trafficData, 100);
@@ -62,7 +68,7 @@ const AdminDashboard = () => {
           </div>
 
           <div className="flex items-center space-x-3">
-            {/* Notification Bell (Pink Dot only renders when recent broadcast exists) */}
+            {/* Notification Bell */}
             <button 
               onClick={() => navigate('/admin/broadcasts')}
               className="relative p-3 rounded-2xl bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer text-slate-600 flex-shrink-0"
