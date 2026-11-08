@@ -15,6 +15,7 @@ import {
 
 import { useSchoolBroadcastsLogic } from '../../../Backend/Admin/SchoolBroadcastsLogic';
 import Spinner from '../../Shared/loaders/Spinner';
+import SkeletonSchoolBroadcasts from '../../Shared/Admin/SkeletonSchoolBroadcasts';
 
 const SchoolBroadcasts = () => {
   const {
@@ -29,6 +30,11 @@ const SchoolBroadcasts = () => {
     broadcastsList, isPublishing, isLoadingHistory,
     toast, handlePushBroadcast, handleFileChange
   } = useSchoolBroadcastsLogic();
+
+  // Render skeleton loader during initial history fetch
+  if (isLoadingHistory && broadcastsList.length === 0) {
+    return <SkeletonSchoolBroadcasts />;
+  }
 
   return (
     <div className="p-4 sm:p-8 space-y-8 max-w-7xl mx-auto font-sans antialiased text-slate-800">
