@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import supabase  from '../../config/supabaseClient';
+import  supabase  from '../../config/supabaseClient';
 
 export const useSettingsLogic = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -61,41 +61,66 @@ export const useSettingsLogic = () => {
           }
         }
 
-        // 2. If no valid pupil cached, look up dynamically via authenticated educator session
+        // 2. If no valid pupil cached, check localStorage array
         if (!targetChild) {
+          const storedChildren = localStorage.getItem('parent_children');
+          if (storedChildren) {
+            const parsedChildren = JSON.parse(storedChildren);
+            // Ensure we pick an actual pupil from the array rather than an educator profile
+            const validPupil = parsedChildren.find(c => c.role === 'pupil' || c.grade);
+            if (validPupil) {
+              targetChild = validPupil;
+            } else if (parsedChildren.length > 0) {
+              targetChild = parsedChildren[0];
+            }
+          }
+        }
+
+        // 3. Fallback database lookup for authenticated session / staff-parent mapping
+        if (!targetChild || targetChild.role === 'educator') {
           const { data: { user } } = await supabase.auth.getUser();
+          
+          let searchEmail = user?.email || '';
+          let searchName = '';
+          let lastName = '';
+
           if (user) {
-            const { data: educatorProfile } = await supabase
+            const { data: userProfile } = await supabase
               .from('profiles')
               .select('*')
               .eq('id', user.id)
               .maybeSingle();
-
-            if (educatorProfile) {
-              const searchName = educatorProfile.full_name || '';
-              const searchEmail = educatorProfile.email || user.email || '';
-
-              // Fetch all pupils and filter in JS to avoid PostgREST query errors
-              const { data: allPupils } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('role', 'pupil');
-
-              const matchedPupil = (allPupils || []).find(p => {
-                const guardian = (p.parent_guardian || '').toLowerCase();
-                return (
-                  (searchEmail && guardian.includes(searchEmail.toLowerCase())) ||
-                  (searchName && guardian.includes(searchName.toLowerCase())) ||
-                  searchEmail === 'ojotee346@gmail.com'
-                );
-              });
-
-              if (matchedPupil) {
-                targetChild = matchedPupil;
-              } else if (allPupils && allPupils.length > 0) {
-                targetChild = allPupils[0];
-              }
+            
+            if (userProfile) {
+              searchName = userProfile.full_name || '';
+              searchEmail = userProfile.email || searchEmail;
+              const nameParts = searchName.split(' ').filter(Boolean);
+              lastName = nameParts.length > 0 ? nameParts[nameParts.length - 1] : '';
             }
+          }
+
+          // Fetch all actual pupil records
+          const { data: allPupils } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('role', 'pupil');
+
+          const matchedPupil = (allPupils || []).find(p => {
+            const guardian = (p.parent_guardian || '').toLowerCase();
+            const fullName = (p.full_name || '').toLowerCase();
+            return (
+              (searchEmail && guardian.includes(searchEmail.toLowerCase())) ||
+              (searchName && guardian.includes(searchName.toLowerCase())) ||
+              (lastName && guardian.includes(lastName.toLowerCase())) ||
+              (lastName && fullName.includes(lastName.toLowerCase()))
+            );
+          });
+
+          if (matchedPupil) {
+            targetChild = matchedPupil;
+          } else if (allPupils && allPupils.length > 0) {
+            // Default to first real pupil if matching is ambiguous
+            targetChild = allPupils[0];
           }
         }
 
