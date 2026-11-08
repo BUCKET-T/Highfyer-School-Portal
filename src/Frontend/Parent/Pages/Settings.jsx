@@ -1,61 +1,34 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
+import { useSettingsLogic } from '../../../Backend/Parent/SettingsLogic';
+import SkeletonSettings from '../../Shared/loaders/SkeletonSettings';
 
 const Settings = () => {
-  // Active internal settings tab state
-  const [activeTab, setActiveTab] = useState('profile');
+  const {
+    activeTab, setActiveTab,
+    isLoading, isSaving,
+    profileData, handleInputChange,
+    getInitials,
+    oldPassword, setOldPassword,
+    newPassword, setNewPassword,
+    showOldPassword, setShowOldPassword,
+    showNewPassword, setShowNewPassword,
+    passwordSuccess, passwordError,
+    pushNotifs, setPushNotifs,
+    emailNotifs, setEmailNotifs,
+    darkMode, setDarkMode,
+    savedSuccess,
+    handleCustomAvatarUpload,
+    handleSaveSettings,
+    handlePasswordChange,
+  } = useSettingsLogic();
 
-  // Single ward avatar state
-  const [wardAvatar, setWardAvatar] = useState(
-    'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80'
-  );
-
-  // Form states for profile & preferences
-  const [parentEmail, setParentEmail] = useState('parent.okoro@example.com');
-  const [contactPhone, setContactPhone] = useState('+234 803 000 1111');
-  const [emergencyContact, setEmergencyContact] = useState('+234 803 222 3333');
-  
-  // Password state fields
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [showOldPassword, setShowOldPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
-
-  // Toggle preferences
-  const [largerText, setLargerText] = useState(false);
-  const [pushNotifs, setPushNotifs] = useState(true);
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-  const [savedSuccess, setSavedSuccess] = useState(false);
-
-  // Handle custom image upload
-  const handleCustomAvatarUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const imageUri = URL.createObjectURL(file);
-      setWardAvatar(imageUri);
-    }
-  };
-
-  const handleSaveSettings = (e) => {
-    e.preventDefault();
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
-  };
-
-  const handlePasswordChange = (e) => {
-    e.preventDefault();
-    if (oldPassword && newPassword) {
-      setPasswordSuccess(true);
-      setOldPassword('');
-      setNewPassword('');
-      setTimeout(() => setPasswordSuccess(false), 3000);
-    }
-  };
+  if (isLoading) {
+    return <SkeletonSettings />;
+  }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-8 bg-slate-50/60 min-h-screen">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8 bg-slate-50/60 min-h-screen font-sans">
       
       {/* Top Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
@@ -76,16 +49,16 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* Ward Badge */}
+        {/* Dynamic Ward Badge directly from profiles table */}
         <div className="flex items-center space-x-2 bg-slate-100/80 px-3.5 py-2.5 rounded-2xl border border-slate-200/60 self-start md:self-auto">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">WARD:</span>
           <span className="text-xs font-extrabold text-white bg-brand-navy px-2.5 py-0.5 rounded-lg">
-            CHIDI OKORO - GRADE 1 GOLD
+            {(profileData.full_name || 'STUDENT').toUpperCase()} - {(profileData.grade || 'N/A').toUpperCase()}
           </span>
         </div>
       </div>
 
-      {/* Main Grid Layout: Left Nav Card + Right Content Card */}
+      {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* Left Sub-Tab Navigation */}
@@ -171,27 +144,34 @@ const Settings = () => {
           
           {savedSuccess && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-2xl text-xs font-bold">
-              ✓ Settings updated successfully!
+              ✓ Profile updated successfully in profiles table!
             </motion.div>
           )}
 
           {activeTab === 'profile' && (
             <form onSubmit={handleSaveSettings} className="space-y-8">
               
-              {/* Single Ward Avatar Display Section */}
+              {/* Avatar Section */}
               <div className="space-y-4 pb-6 border-b border-slate-100">
                 <div className="space-y-1">
                   <h2 className="text-xl font-extrabold text-brand-navy">Ward Profile Picture</h2>
-                  <p className="text-xs text-slate-500 font-medium">Current active photo displayed across the parent portal header.</p>
+                  <p className="text-xs text-slate-500 font-medium">Current active photo displayed across the parent portal.</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-6 pt-2">
                   <div className="relative group flex-shrink-0">
-                    <img
-                      src={wardAvatar}
-                      alt="Chidi Okoro"
-                      className="w-24 h-24 rounded-full object-cover shadow-md border-4 border-slate-100 ring-2 ring-brand-blue/30"
-                    />
+                    {profileData.avatar_url ? (
+                      <img
+                        src={profileData.avatar_url}
+                        alt={profileData.full_name}
+                        className="w-24 h-24 rounded-full object-cover shadow-md border-4 border-slate-100 ring-2 ring-brand-blue/30"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 rounded-full bg-brand-navy text-white flex items-center justify-center font-extrabold text-2xl shadow-md border-4 border-slate-100 ring-2 ring-brand-blue/30 select-none">
+                        {getInitials(profileData.full_name)}
+                      </div>
+                    )}
+
                     <label
                       htmlFor="avatar-upload"
                       className="absolute bottom-0 right-0 bg-brand-blue hover:bg-slate-800 text-white p-2.5 rounded-full shadow-lg cursor-pointer transition-all"
@@ -212,18 +192,18 @@ const Settings = () => {
                   </div>
 
                   <div className="space-y-1 text-center sm:text-left">
-                    <h3 className="text-sm font-extrabold text-brand-navy">Chidi Okoro</h3>
-                    <p className="text-xs font-semibold text-slate-400">Grade 1 Gold pupil</p>
-                    <p className="text-[11px] text-slate-400 font-medium pt-1">Click the camera icon to upload a custom image (PNG, JPG, WEBP max 30kb).</p>
+                    <h3 className="text-sm font-extrabold text-brand-navy">{profileData.full_name || 'Student Name'}</h3>
+                    <p className="text-xs font-semibold text-slate-400">{profileData.grade || 'Class'} Pupil</p>
+                    <p className="text-[11px] text-slate-400 font-medium pt-1">Click camera icon to select a local photo or clear to keep 2-letter initials badge.</p>
                   </div>
                 </div>
               </div>
 
-              {/* Personal Information Inputs */}
+              {/* Personal Details Section mapped to profiles columns */}
               <div className="space-y-6">
                 <div className="space-y-1">
                   <h3 className="text-base font-extrabold text-brand-navy">Personal Details</h3>
-                  <p className="text-xs text-slate-500 font-medium">Update guardian contacts and emergency records.</p>
+                  <p className="text-xs text-slate-500 font-medium">Synced directly with your academy profile record.</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -232,17 +212,27 @@ const Settings = () => {
                     <input
                       type="text"
                       disabled
-                      value="Chidi Okoro"
+                      value={profileData.full_name}
                       className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-extrabold text-brand-navy cursor-not-allowed"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">PARENT/GUARDIAN EMAIL</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">PARENT/GUARDIAN NAME</label>
+                    <input
+                      type="text"
+                      value={profileData.parent_guardian}
+                      onChange={(e) => handleInputChange('parent_guardian', e.target.value)}
+                      className="w-full p-3 bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-2xl text-xs font-bold text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-blue/30 transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">PARENT EMAIL</label>
                     <input
                       type="email"
-                      value={parentEmail}
-                      onChange={(e) => setParentEmail(e.target.value)}
+                      value={profileData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
                       className="w-full p-3 bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-2xl text-xs font-bold text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-blue/30 transition-all"
                     />
                   </div>
@@ -251,57 +241,32 @@ const Settings = () => {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CONTACT PHONE</label>
                     <input
                       type="text"
-                      value={contactPhone}
-                      onChange={(e) => setContactPhone(e.target.value)}
+                      value={profileData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
                       className="w-full p-3 bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-2xl text-xs font-bold text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-blue/30 transition-all"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">EMERGENCY CONTACT</label>
+                  <div className="sm:col-span-2 space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">HOME ADDRESS</label>
                     <input
                       type="text"
-                      value={emergencyContact}
-                      onChange={(e) => setEmergencyContact(e.target.value)}
+                      value={profileData.home_address}
+                      onChange={(e) => handleInputChange('home_address', e.target.value)}
                       className="w-full p-3 bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-2xl text-xs font-bold text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-blue/30 transition-all"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Display Preferences */}
-              <div className="pt-6 border-t border-slate-100 space-y-4">
-                <div className="space-y-1">
-                  <h3 className="text-base font-extrabold text-brand-navy">Display Preferences</h3>
-                  <p className="text-xs text-slate-500 font-medium">Customize text sizing for legibility.</p>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-bold text-brand-navy">Larger Text Size</p>
-                    <p className="text-[11px] text-slate-500 font-medium">Increase portal font scaling for easier reading.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setLargerText(!largerText)}
-                    className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                      largerText ? 'bg-brand-blue' : 'bg-slate-300'
-                    }`}
-                  >
-                    <motion.div
-                      animate={{ x: largerText ? 24 : 0 }}
-                      className="bg-white w-4 h-4 rounded-full shadow-md"
-                    />
-                  </button>
-                </div>
-              </div>
-
+              {/* Save Button */}
               <div className="pt-4 flex justify-end">
                 <button
                   type="submit"
-                  className="bg-brand-navy hover:bg-slate-800 text-white font-extrabold px-6 py-3 rounded-2xl text-xs transition-all shadow-md cursor-pointer"
+                  disabled={isSaving}
+                  className="bg-brand-navy hover:bg-slate-800 disabled:opacity-50 text-white font-extrabold px-6 py-3 rounded-2xl text-xs transition-all shadow-md cursor-pointer"
                 >
-                  Save Profile Changes
+                  {isSaving ? 'Saving Changes...' : 'Save Profile Changes'}
                 </button>
               </div>
             </form>
@@ -346,7 +311,6 @@ const Settings = () => {
             </div>
           )}
 
-          {/* Privacy & Security Tab with Password Input Fields */}
           {activeTab === 'privacy' && (
             <div className="space-y-6">
               <div className="space-y-1">
@@ -360,9 +324,13 @@ const Settings = () => {
                 </motion.div>
               )}
 
+              {passwordError && (
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-2xl text-xs font-bold">
+                  {passwordError}
+                </motion.div>
+              )}
+
               <form onSubmit={handlePasswordChange} className="space-y-5 max-w-md">
-                
-                {/* Old Password Input Box */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">INPUT OLD PASSWORD</label>
                   <div className="relative">
@@ -377,7 +345,7 @@ const Settings = () => {
                     <button
                       type="button"
                       onClick={() => setShowOldPassword(!showOldPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                         {showOldPassword ? (
@@ -390,7 +358,6 @@ const Settings = () => {
                   </div>
                 </div>
 
-                {/* New Password Input Box */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">INPUT NEW PASSWORD</label>
                   <div className="relative">
@@ -405,7 +372,7 @@ const Settings = () => {
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                         {showNewPassword ? (

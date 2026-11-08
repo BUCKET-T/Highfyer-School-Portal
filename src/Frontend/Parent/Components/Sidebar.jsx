@@ -1,69 +1,30 @@
-import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Import Logo Asset
+// Import Logo Asset & Skeleton Loader
 import schoolLogo from '../../../assets/logo.png';
+import SkeletonSidebar from '../../Shared/loaders/SkeletonSidebar';
+import { useSidebarLogic } from '../../../Backend/Parent/SidebarLogic';
 
 const Sidebar = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const {
+    location,
+    isDesktopCollapsed,
+    setIsDesktopCollapsed,
+    isMobileOpen,
+    setIsMobileOpen,
+    showLogoutModal,
+    setShowLogoutModal,
+    isLoggingOut,
+    isLoading,
+    navItems,
+    handleLogout,
+  } = useSidebarLogic();
 
-  // Desktop collapse state
-  const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
-  // Mobile drawer open state
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-  // Logout confirmation modal state
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-
-  // Navigation Items
-  const navItems = [
-    {
-      name: 'Dashboard',
-      path: '/parent/dashboard',
-      icon: (
-        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-        </svg>
-      ),
-    },
-    {
-      name: 'My Courses',
-      path: '/parent/courses',
-      icon: (
-        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-        </svg>
-      ),
-    },
-    {
-      name: 'Assignments',
-      path: '/parent/assignments',
-      icon: (
-        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-        </svg>
-      ),
-    },
-    {
-      name: 'Results',
-      path: '/parent/results',
-      icon: (
-        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
-    },
-    {
-      name: 'Feed',
-      path: '/parent/feed',
-      icon: (
-        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-        </svg>
-      ),
-    },
-  ];
+  if (isLoading) {
+    return <SkeletonSidebar />;
+  }
 
   const sidebarContent = (isCollapsedView) => (
     <div className="h-full flex flex-col justify-between select-none">
@@ -81,7 +42,7 @@ const Sidebar = () => {
                   Highflyer
                 </span>
                 <span className="text-[10px] font-semibold text-brand-sky uppercase tracking-wider pt-1 truncate">
-                  Student Portal
+                  Parent Portal
                 </span>
               </div>
             )}
@@ -236,7 +197,7 @@ const Sidebar = () => {
         </button>
       </div>
 
-      {/* Desktop Sidebar (Strictly fixed viewport height and non-expanding) */}
+      {/* Desktop Sidebar */}
       <aside
         className={`hidden md:flex bg-brand-navy h-screen py-6 transition-all duration-300 ease-in-out flex-col justify-between select-none shadow-xl z-30 sticky top-0 flex-shrink-0 ${
           isDesktopCollapsed ? 'w-20 px-3' : 'w-64 px-6'
@@ -290,7 +251,7 @@ const Sidebar = () => {
             >
               <div className="w-14 h-14 bg-brand-coral/10 text-brand-coral rounded-2xl flex items-center justify-center shadow-inner">
                 <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a33 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
               </div>
 
@@ -311,13 +272,11 @@ const Sidebar = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowLogoutModal(false);
-                    navigate('/parent/login');
-                  }}
-                  className="w-full bg-brand-coral hover:bg-orange-600 text-white font-bold py-3.5 rounded-2xl text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+                  disabled={isLoggingOut}
+                  onClick={handleLogout}
+                  className="w-full bg-brand-coral hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl text-xs sm:text-sm shadow-md transition-all cursor-pointer flex items-center justify-center"
                 >
-                  Yes, Logout
+                  {isLoggingOut ? 'Logging out...' : 'Yes, Logout'}
                 </button>
               </div>
             </motion.div>

@@ -24,7 +24,7 @@ const AdminSettings = () => {
 
   const {
     activeTab, setActiveTab,
-    isSaving, isLoadingLogs, isLoading, toast,
+    isSaving, isLoadingLogs, toast,
     profile, setProfile,
     settings, setSettings,
     passwordData, setPasswordData,
