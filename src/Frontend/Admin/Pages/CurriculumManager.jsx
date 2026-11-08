@@ -7,6 +7,7 @@ import {
 
 import { useCurriculumManagerLogic } from '../../../Backend/Admin/CurriculumManagerLogic';
 import Spinner from '../../Shared/loaders/Spinner';
+import SkeletonCurriculumManager from '../../Shared/Admin/SkeletonCurriculumManager';
 
 const CurriculumManager = () => {
   const {
@@ -24,6 +25,11 @@ const CurriculumManager = () => {
     gradeOptions, termOptions, subjectOptions,
     handleSaveCurriculum,
   } = useCurriculumManagerLogic();
+
+  // Render skeleton loader during initial data load
+  if (isLoading) {
+    return <SkeletonCurriculumManager />;
+  }
 
   return (
     <div className="p-4 sm:p-8 space-y-8 max-w-7xl mx-auto font-sans antialiased text-slate-800">
@@ -198,194 +204,187 @@ const CurriculumManager = () => {
       </div>
 
       {/* Main Content Area */}
-      {isLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center space-y-3 bg-white rounded-3xl shadow-xl">
-          <Spinner size="md" color="brand-blue" />
-          <p className="text-xs font-bold text-slate-400">Loading 12-week curriculum from Supabase...</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left 2 Columns: 12-Week Syllabus Planner & Objectives */}
+        <div className="lg:col-span-2 space-y-8">
           
-          {/* Left 2 Columns: 12-Week Syllabus Planner & Objectives */}
-          <div className="lg:col-span-2 space-y-8">
-            
-            {/* 12-Week Term Planner */}
-            <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div className="flex items-center space-x-2.5">
-                  <Calendar size={18} className="text-sky-500" />
-                  <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">12-Week Term Syllabus Planner</h3>
-                </div>
-                <span className="px-3 py-1 bg-sky-50 text-sky-600 text-xs font-extrabold rounded-full">
-                  {selectedGrade} • {selectedSubject}
-                </span>
+          {/* 12-Week Term Planner */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center space-x-2.5">
+                <Calendar size={18} className="text-sky-500" />
+                <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">12-Week Term Syllabus Planner</h3>
               </div>
-
-              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                {weeklyTopics.map((weekData) => (
-                  <div 
-                    key={weekData.week}
-                    className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3 hover:border-sky-200 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="px-3 py-1 bg-[#121B2D] text-white text-[10px] font-black rounded-lg uppercase tracking-wider">
-                        Week {weekData.week}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <input
-                        type="text"
-                        placeholder={`Week ${weekData.week} Topic Title`}
-                        value={weekData.title}
-                        onChange={(e) => handleWeekChange(weekData.week, 'title', e.target.value)}
-                        className="bg-white border border-slate-200 focus:border-sky-500 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 shadow-inner focus:outline-none"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Topic summary / Sub-topics"
-                        value={weekData.description}
-                        onChange={(e) => handleWeekChange(weekData.week, 'description', e.target.value)}
-                        className="bg-white border border-slate-200 focus:border-sky-500 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 shadow-inner focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <span className="px-3 py-1 bg-sky-50 text-sky-600 text-xs font-extrabold rounded-full">
+                {selectedGrade} • {selectedSubject}
+              </span>
             </div>
 
-            {/* Learning Objectives */}
-            <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div className="flex items-center space-x-2.5">
-                  <Layers size={18} className="text-sky-500" />
-                  <h3 className="text-base font-black text-slate-900">General Learning Objectives</h3>
-                </div>
-                <span className="px-3 py-1 bg-sky-50 text-sky-600 text-xs font-extrabold rounded-full">
-                  {learningObjectives.length} Objectives
-                </span>
-              </div>
-
-              <form onSubmit={handleAddObjective} className="flex items-center space-x-3">
-                <input
-                  type="text"
-                  value={newObjective}
-                  onChange={(e) => setNewObjective(e.target.value)}
-                  placeholder="e.g. Master multiplication tables from 1 to 12"
-                  className="flex-1 bg-slate-50 border border-slate-200 focus:border-sky-500 rounded-2xl px-4 py-3 text-xs font-bold text-slate-800 shadow-inner focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="bg-sky-500 hover:bg-sky-600 text-white font-extrabold px-5 py-3 rounded-2xl text-xs shadow-md transition-all cursor-pointer flex items-center space-x-1.5 flex-shrink-0"
+            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+              {weeklyTopics.map((weekData) => (
+                <div 
+                  key={weekData.week}
+                  className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3 hover:border-sky-200 transition-colors"
                 >
-                  <Plus size={16} />
-                  <span>Add Objective</span>
-                </button>
-              </form>
-
-              <div className="space-y-3 pt-2">
-                {learningObjectives.length === 0 ? (
-                  <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-2xl">
-                    <p className="text-xs font-bold text-slate-400">No general learning objectives added yet.</p>
+                  <div className="flex items-center justify-between">
+                    <span className="px-3 py-1 bg-[#121B2D] text-white text-[10px] font-black rounded-lg uppercase tracking-wider">
+                      Week {weekData.week}
+                    </span>
                   </div>
-                ) : (
-                  learningObjectives.map((objective, index) => (
-                    <div 
-                      key={index}
-                      className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between"
-                    >
-                      <div className="flex items-start space-x-3 text-left">
-                        <span className="w-6 h-6 rounded-lg bg-white border border-slate-200 text-sky-600 text-[11px] font-black flex items-center justify-center flex-shrink-0 mt-0.5">
-                          {index + 1}
-                        </span>
-                        <span className="text-xs font-bold text-slate-800 leading-relaxed pt-0.5">{objective}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveObjective(index)}
-                        className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer flex-shrink-0"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
 
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder={`Week ${weekData.week} Topic Title`}
+                      value={weekData.title}
+                      onChange={(e) => handleWeekChange(weekData.week, 'title', e.target.value)}
+                      className="bg-white border border-slate-200 focus:border-sky-500 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 shadow-inner focus:outline-none"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Topic summary / Sub-topics"
+                      value={weekData.description}
+                      onChange={(e) => handleWeekChange(weekData.week, 'description', e.target.value)}
+                      className="bg-white border border-slate-200 focus:border-sky-500 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 shadow-inner focus:outline-none"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Right Column: PDF Attachment */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-5">
+          {/* Learning Objectives */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center space-x-2.5">
-                <FileText size={18} className="text-sky-500" />
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">PDF Syllabus Attachment</h3>
+                <Layers size={18} className="text-sky-500" />
+                <h3 className="text-base font-black text-slate-900">General Learning Objectives</h3>
               </div>
+              <span className="px-3 py-1 bg-sky-50 text-sky-600 text-xs font-extrabold rounded-full">
+                {learningObjectives.length} Objectives
+              </span>
+            </div>
 
-              <p className="text-xs font-medium text-slate-500 text-left">
-                Attach a complete printable syllabus PDF for parents and educators to download.
-              </p>
+            <form onSubmit={handleAddObjective} className="flex items-center space-x-3">
+              <input
+                type="text"
+                value={newObjective}
+                onChange={(e) => setNewObjective(e.target.value)}
+                placeholder="e.g. Master multiplication tables from 1 to 12"
+                className="flex-1 bg-slate-50 border border-slate-200 focus:border-sky-500 rounded-2xl px-4 py-3 text-xs font-bold text-slate-800 shadow-inner focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="bg-sky-500 hover:bg-sky-600 text-white font-extrabold px-5 py-3 rounded-2xl text-xs shadow-md transition-all cursor-pointer flex items-center space-x-1.5 flex-shrink-0"
+              >
+                <Plus size={16} />
+                <span>Add Objective</span>
+              </button>
+            </form>
 
-              {pdfFileName ? (
-                <div className="p-4 bg-sky-50/60 border border-sky-100 rounded-2xl text-left space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-sky-500 text-white rounded-xl flex items-center justify-center flex-shrink-0 shadow">
-                      <FileText size={20} />
-                    </div>
-                    <div className="overflow-hidden">
-                      <h4 className="text-xs font-black text-slate-900 truncate">{pdfFileName}</h4>
-                      <span className="text-[10px] font-extrabold text-emerald-600 flex items-center space-x-1 pt-0.5">
-                        <CheckCircle2 size={12} />
-                        <span>Attached & Ready</span>
+            <div className="space-y-3 pt-2">
+              {learningObjectives.length === 0 ? (
+                <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-2xl">
+                  <p className="text-xs font-bold text-slate-400">No general learning objectives added yet.</p>
+                </div>
+              ) : (
+                learningObjectives.map((objective, index) => (
+                  <div 
+                    key={index}
+                    className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between"
+                  >
+                    <div className="flex items-start space-x-3 text-left">
+                      <span className="w-6 h-6 rounded-lg bg-white border border-slate-200 text-sky-600 text-[11px] font-black flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {index + 1}
                       </span>
+                      <span className="text-xs font-bold text-slate-800 leading-relaxed pt-0.5">{objective}</span>
                     </div>
-                  </div>
-
-                  <div className="pt-2 flex items-center space-x-2">
                     <button
                       type="button"
-                      onClick={() => alert(`Opening document: ${pdfFileName}`)}
-                      className="flex-1 bg-white hover:bg-slate-50 text-sky-600 border border-slate-200 text-center py-2 rounded-xl text-xs font-black transition-colors cursor-pointer"
-                    >
-                      View Document
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPdfFileName('')}
-                      className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                      onClick={() => handleRemoveObjective(index)}
+                      className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer flex-shrink-0"
                     >
                       <Trash2 size={16} />
                     </button>
                   </div>
-                </div>
-              ) : (
-                <label className="border-2 border-dashed border-slate-200 hover:border-sky-400 p-6 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-colors space-y-2 bg-slate-50/50">
-                  <Upload size={24} className="text-slate-400" />
-                  <span className="text-xs font-bold text-slate-700">Click to upload PDF Syllabus</span>
-                  <span className="text-[10px] font-medium text-slate-400">PDF up to 10MB</span>
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    onChange={(e) => {
-                      if (e.target.files[0]) setPdfFileName(e.target.files[0].name);
-                    }}
-                    className="hidden"
-                  />
-                </label>
+                ))
               )}
-            </div>
-
-            <div className="bg-[#121B2D] p-6 rounded-3xl text-white shadow-xl space-y-3 text-left">
-              <h4 className="text-xs font-black text-sky-400 uppercase tracking-widest">Database Synced</h4>
-              <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                Changes saved here update the backend  table with structured 12-week topics.
-              </p>
             </div>
           </div>
 
         </div>
-      )}
+
+        {/* Right Column: PDF Attachment */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-5">
+            <div className="flex items-center space-x-2.5">
+              <FileText size={18} className="text-sky-500" />
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">PDF Syllabus Attachment</h3>
+            </div>
+
+            <p className="text-xs font-medium text-slate-500 text-left">
+              Attach a complete printable syllabus PDF for parents and educators to download.
+            </p>
+
+            {pdfFileName ? (
+              <div className="p-4 bg-sky-50/60 border border-sky-100 rounded-2xl text-left space-y-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-sky-500 text-white rounded-xl flex items-center justify-center flex-shrink-0 shadow">
+                    <FileText size={20} />
+                  </div>
+                  <div className="overflow-hidden">
+                    <h4 className="text-xs font-black text-slate-900 truncate">{pdfFileName}</h4>
+                    <span className="text-[10px] font-extrabold text-emerald-600 flex items-center space-x-1 pt-0.5">
+                      <CheckCircle2 size={12} />
+                      <span>Attached & Ready</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => alert(`Opening document: ${pdfFileName}`)}
+                    className="flex-1 bg-white hover:bg-slate-50 text-sky-600 border border-slate-200 text-center py-2 rounded-xl text-xs font-black transition-colors cursor-pointer"
+                  >
+                    View Document
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPdfFileName('')}
+                    className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="border-2 border-dashed border-slate-200 hover:border-sky-400 p-6 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-colors space-y-2 bg-slate-50/50">
+                <Upload size={24} className="text-slate-400" />
+                <span className="text-xs font-bold text-slate-700">Click to upload PDF Syllabus</span>
+                <span className="text-[10px] font-medium text-slate-400">PDF up to 10MB</span>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => {
+                    if (e.target.files[0]) setPdfFileName(e.target.files[0].name);
+                  }}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+
+          <div className="bg-[#121B2D] p-6 rounded-3xl text-white shadow-xl space-y-3 text-left">
+            <h4 className="text-xs font-black text-sky-400 uppercase tracking-widest">Database Synced</h4>
+            <p className="text-xs text-slate-300 leading-relaxed font-medium">
+              Changes saved here update the backend table with structured 12-week topics.
+            </p>
+          </div>
+        </div>
+
+      </div>
 
       {/* Floating Toast Notification */}
       <AnimatePresence>

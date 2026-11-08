@@ -18,12 +18,13 @@ import {
   KeyRound
 } from 'lucide-react';
 import { useAdminSettingsLogic } from '../../../Backend/Admin/AdminSettingsLogic';
+import SkeletonAdminSettings from '../../Shared/Admin/SkeletonAdminSettings';
 
 const AdminSettings = () => {
 
   const {
     activeTab, setActiveTab,
-    isSaving, isLoadingLogs, toast,
+    isSaving, isLoadingLogs, isLoading, toast,
     profile, setProfile,
     settings, setSettings,
     passwordData, setPasswordData,
@@ -38,6 +39,11 @@ const AdminSettings = () => {
     handleSave,
     handlePasswordChangeSubmit
   } = useAdminSettingsLogic();
+
+  // Display skeleton loader during initial data fetching
+  if (isLoadingLogs) {
+    return <SkeletonAdminSettings />;
+  }
 
   return (
     <div className="p-4 sm:p-8 space-y-8 max-w-7xl mx-auto font-sans antialiased text-slate-800">
