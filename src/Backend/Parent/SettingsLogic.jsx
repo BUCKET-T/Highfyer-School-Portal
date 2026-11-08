@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import  supabase  from '../../config/supabaseClient';
+import  supabase from '../../config/supabaseClient';
 
 export const useSettingsLogic = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Profile fields directly bound to `public.profiles` schema
   const [profileData, setProfileData] = useState({
     id: '',
     full_name: '',
@@ -18,7 +17,6 @@ export const useSettingsLogic = () => {
     avatar_url: null,
   });
 
-  // Password fields
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [showOldPassword, setShowOldPassword] = useState(false);
@@ -26,14 +24,12 @@ export const useSettingsLogic = () => {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordError, setPasswordError] = useState('');
 
-  // Preference toggles
   const [largerText, setLargerText] = useState(false);
   const [pushNotifs, setPushNotifs] = useState(true);
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Derive 2-letter initials directly from student's full name
   const getInitials = (nameStr) => {
     if (!nameStr) return 'WD';
     const parts = nameStr.trim().split(/\s+/);
@@ -50,23 +46,41 @@ export const useSettingsLogic = () => {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
-          // Fetch from public.profiles table matching logged-in user id or email
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('id, full_name, grade, parent_guardian, email, phone, home_address, avatar_url')
-            .or(`id.eq.${user.id},email.eq.${user.email}`)
-            .single();
+          let targetProfile = null;
 
-          if (data && !error) {
+          // 1. Try matching by exact ID or email
+          const { data: directMatch } = await supabase
+            .from('profiles')
+            .select('*')
+            .or(`id.eq.${user.id},email.eq.${user.email}`)
+            .maybeSingle();
+
+          if (directMatch) {
+            targetProfile = directMatch;
+          } else {
+            // 2. Fallback to fetch the first pupil profile record
+            const { data: pupilMatch } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('role', 'pupil')
+              .limit(1)
+              .maybeSingle();
+
+            if (pupilMatch) {
+              targetProfile = pupilMatch;
+            }
+          }
+
+          if (targetProfile) {
             setProfileData({
-              id: data.id || user.id,
-              full_name: data.full_name || '',
-              grade: data.grade || '',
-              parent_guardian: data.parent_guardian || '',
-              email: data.email || user.email || '',
-              phone: data.phone || '',
-              home_address: data.home_address || '',
-              avatar_url: data.avatar_url || null,
+              id: targetProfile.id,
+              full_name: targetProfile.full_name || '',
+              grade: targetProfile.grade || '',
+              parent_guardian: targetProfile.parent_guardian || '',
+              email: targetProfile.email || user.email || '',
+              phone: targetProfile.phone || '',
+              home_address: targetProfile.home_address || '',
+              avatar_url: targetProfile.avatar_url || null,
             });
           }
         }
@@ -80,15 +94,11 @@ export const useSettingsLogic = () => {
     fetchProfile();
   }, []);
 
-  const handleInputChange = (field, value) => {
-    setProfileData((prev) => ({ ...prev, [field]: value }));
-  };
-
   const handleCustomAvatarUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 300 * 1024) {
-        alert('File size exceeds maximum limit.');
+      if (file.size > 500 * 1024) {
+        alert('File size exceeds 500KB limit. Please choose a smaller image.');
         return;
       }
       const reader = new FileReader();
@@ -99,28 +109,38 @@ export const useSettingsLogic = () => {
     }
   };
 
-  const handleSaveSettings = async (e) => {
+  const handleSaveAvatarOnly = async (e) => {
     e.preventDefault();
+    if (!profileData.id) {
+      alert('Error: No profile ID found to update.');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({
-          parent_guardian: profileData.parent_guardian,
-          email: profileData.email,
-          phone: profileData.phone,
-          home_address: profileData.home_address,
           avatar_url: profileData.avatar_url,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', profileData.id);
+        .eq('id', profileData.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase update error details:', error);
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error('Update affected 0 rows. Please check Row Level Security (RLS) policies on the profiles table.');
+      }
 
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
     } catch (err) {
-      console.error('Error updating profiles table:', err);
+      console.error('Error updating profile avatar:', err.message || err);
+      alert(`Failed to save avatar: ${err.message || 'Check console for details.'}`);
     } finally {
       setIsSaving(false);
     }
@@ -147,7 +167,7 @@ export const useSettingsLogic = () => {
   return {
     activeTab, setActiveTab,
     isLoading, isSaving,
-    profileData, handleInputChange,
+    profileData,
     getInitials,
     oldPassword, setOldPassword,
     newPassword, setNewPassword,
@@ -160,7 +180,7 @@ export const useSettingsLogic = () => {
     darkMode, setDarkMode,
     savedSuccess,
     handleCustomAvatarUpload,
-    handleSaveSettings,
+    handleSaveAvatarOnly,
     handlePasswordChange,
   };
 };

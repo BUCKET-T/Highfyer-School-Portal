@@ -7,7 +7,7 @@ const Settings = () => {
   const {
     activeTab, setActiveTab,
     isLoading, isSaving,
-    profileData, handleInputChange,
+    profileData,
     getInitials,
     oldPassword, setOldPassword,
     newPassword, setNewPassword,
@@ -19,7 +19,7 @@ const Settings = () => {
     darkMode, setDarkMode,
     savedSuccess,
     handleCustomAvatarUpload,
-    handleSaveSettings,
+    handleSaveAvatarOnly,
     handlePasswordChange,
   } = useSettingsLogic();
 
@@ -44,12 +44,12 @@ const Settings = () => {
               Settings
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 font-medium pt-0.5">
-              Manage your profile, ward picture, and portal preferences.
+              Manage your ward picture and portal preferences.
             </p>
           </div>
         </div>
 
-        {/* Dynamic Ward Badge directly from profiles table */}
+        {/* Dynamic Ward Badge */}
         <div className="flex items-center space-x-2 bg-slate-100/80 px-3.5 py-2.5 rounded-2xl border border-slate-200/60 self-start md:self-auto">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">WARD:</span>
           <span className="text-xs font-extrabold text-white bg-brand-navy px-2.5 py-0.5 rounded-lg">
@@ -144,18 +144,18 @@ const Settings = () => {
           
           {savedSuccess && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-2xl text-xs font-bold">
-              ✓ Profile updated successfully in profiles table!
+              ✓ Avatar updated successfully!
             </motion.div>
           )}
 
           {activeTab === 'profile' && (
-            <form onSubmit={handleSaveSettings} className="space-y-8">
+            <form onSubmit={handleSaveAvatarOnly} className="space-y-8">
               
-              {/* Avatar Section */}
+              {/* Editable Ward Avatar Section */}
               <div className="space-y-4 pb-6 border-b border-slate-100">
                 <div className="space-y-1">
                   <h2 className="text-xl font-extrabold text-brand-navy">Ward Profile Picture</h2>
-                  <p className="text-xs text-slate-500 font-medium">Current active photo displayed across the parent portal.</p>
+                  <p className="text-xs text-slate-500 font-medium">Click the camera icon to upload a picture. Avatar is the only editable field on this page.</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-6 pt-2">
@@ -194,16 +194,16 @@ const Settings = () => {
                   <div className="space-y-1 text-center sm:text-left">
                     <h3 className="text-sm font-extrabold text-brand-navy">{profileData.full_name || 'Student Name'}</h3>
                     <p className="text-xs font-semibold text-slate-400">{profileData.grade || 'Class'} Pupil</p>
-                    <p className="text-[11px] text-slate-400 font-medium pt-1">Click camera icon to select a local photo or clear to keep 2-letter initials badge.</p>
+                    <p className="text-[11px] text-slate-400 font-medium pt-1">Select a local photo to customize your avatar.</p>
                   </div>
                 </div>
               </div>
 
-              {/* Personal Details Section mapped to profiles columns */}
+              {/* Read-Only Profile Credentials Section */}
               <div className="space-y-6">
                 <div className="space-y-1">
-                  <h3 className="text-base font-extrabold text-brand-navy">Personal Details</h3>
-                  <p className="text-xs text-slate-500 font-medium">Synced directly with your academy profile record.</p>
+                  <h3 className="text-base font-extrabold text-brand-navy">Personal Details (Read Only)</h3>
+                  <p className="text-xs text-slate-500 font-medium">To update these official credentials, please contact the academy administration desk.</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -212,8 +212,9 @@ const Settings = () => {
                     <input
                       type="text"
                       disabled
+                      readOnly
                       value={profileData.full_name}
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-extrabold text-brand-navy cursor-not-allowed"
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-extrabold text-brand-navy cursor-not-allowed opacity-80"
                     />
                   </div>
 
@@ -221,9 +222,10 @@ const Settings = () => {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">PARENT/GUARDIAN NAME</label>
                     <input
                       type="text"
+                      disabled
+                      readOnly
                       value={profileData.parent_guardian}
-                      onChange={(e) => handleInputChange('parent_guardian', e.target.value)}
-                      className="w-full p-3 bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-2xl text-xs font-bold text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-blue/30 transition-all"
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-extrabold text-brand-navy cursor-not-allowed opacity-80"
                     />
                   </div>
 
@@ -231,9 +233,10 @@ const Settings = () => {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">PARENT EMAIL</label>
                     <input
                       type="email"
+                      disabled
+                      readOnly
                       value={profileData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      className="w-full p-3 bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-2xl text-xs font-bold text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-blue/30 transition-all"
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-extrabold text-brand-navy cursor-not-allowed opacity-80"
                     />
                   </div>
 
@@ -241,9 +244,10 @@ const Settings = () => {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CONTACT PHONE</label>
                     <input
                       type="text"
+                      disabled
+                      readOnly
                       value={profileData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className="w-full p-3 bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-2xl text-xs font-bold text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-blue/30 transition-all"
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-extrabold text-brand-navy cursor-not-allowed opacity-80"
                     />
                   </div>
 
@@ -251,22 +255,23 @@ const Settings = () => {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">HOME ADDRESS</label>
                     <input
                       type="text"
+                      disabled
+                      readOnly
                       value={profileData.home_address}
-                      onChange={(e) => handleInputChange('home_address', e.target.value)}
-                      className="w-full p-3 bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-2xl text-xs font-bold text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-blue/30 transition-all"
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-extrabold text-brand-navy cursor-not-allowed opacity-80"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Save Button */}
+              {/* Save Avatar Button */}
               <div className="pt-4 flex justify-end">
                 <button
                   type="submit"
                   disabled={isSaving}
                   className="bg-brand-navy hover:bg-slate-800 disabled:opacity-50 text-white font-extrabold px-6 py-3 rounded-2xl text-xs transition-all shadow-md cursor-pointer"
                 >
-                  {isSaving ? 'Saving Changes...' : 'Save Profile Changes'}
+                  {isSaving ? 'Saving Avatar...' : 'Save Avatar Changes'}
                 </button>
               </div>
             </form>
