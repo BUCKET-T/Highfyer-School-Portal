@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useUserManagementLogic } from '../../../Backend/Admin/UserManagementLogic';
 import Spinner from '../../Shared/loaders/Spinner';
+import SkeletonUserManagement from '../../Shared/Admin/SkeletonUserManagement';
 
 const UserManagement = () => {
   const {
@@ -59,6 +60,11 @@ const UserManagement = () => {
     handleDeleteUser,
     handleCreateUser,
   } = useUserManagementLogic();
+
+  // Render skeleton loader during initial data load
+  if (loading && usersList.length === 0) {
+    return <SkeletonUserManagement />;
+  }
 
   return (
     <div className="p-4 sm:p-8 space-y-8 max-w-7xl mx-auto font-sans antialiased text-slate-800 relative">
@@ -152,12 +158,7 @@ const UserManagement = () => {
 
         {/* User Database Table / Loading / Empty State */}
         <div className="overflow-x-auto">
-          {loading && usersList.length === 0 ? (
-            <div className="text-center py-20 flex flex-col items-center justify-center space-y-4">
-              <Spinner />
-              <p className="text-xs font-bold text-slate-400 tracking-wide">Loading user accounts...</p>
-            </div>
-          ) : filteredUsers.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <div className="text-center py-16 space-y-3">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
                 <Search size={28} />
@@ -352,7 +353,6 @@ const UserManagement = () => {
                     </div>
                   </div>
 
-                  {/* Visible Login Password */}
                   <div className="flex items-center justify-between py-2 border-t border-gray-100">
                     <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Login Password:</span>
                     <span className="text-slate-900 font-mono font-bold bg-slate-100 px-3 py-1 rounded-lg text-xs">
@@ -462,7 +462,7 @@ const UserManagement = () => {
 
                 <form onSubmit={handleCreateUser} id="onboardUserForm" className="space-y-4">
                   
-                  {/* Avatar Upload with 45KB limit notice */}
+                  {/* Avatar Upload */}
                   <div className="space-y-1.5 text-left">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                       PROFILE AVATAR (MAX 45KB)
@@ -616,7 +616,6 @@ const UserManagement = () => {
                         />
                       </div>
 
-                      {/* STAFF HOME ADDRESS */}
                       <div className="space-y-1.5 text-left">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">STAFF RESIDENTIAL ADDRESS</label>
                         <input

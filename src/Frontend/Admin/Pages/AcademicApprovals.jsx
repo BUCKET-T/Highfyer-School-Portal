@@ -19,8 +19,9 @@ import {
 // Import Custom Backend Logic Hook
 import { useAcademicApprovalLogic } from '../../../Backend/Admin/AcademicApprovalLogic';
 
-// Import Shared Spinner Loader
-import Spinner from '../../Shared/loaders/Spinner';
+// Import Shared Spinner Loader & Skeleton Loader
+
+import SkeletonAcademicApprovals from '../../Shared/Admin/SkeletonAcademicApprovals';
 
 const AcademicApprovals = () => {
   const {
@@ -47,6 +48,11 @@ const AcademicApprovals = () => {
     handleBulkApprove,
     handleResetScoreSheet,
   } = useAcademicApprovalLogic();
+
+  // Display Skeleton Loader during initial data fetching
+  if (isLoading && filteredSubmissions.length === 0) {
+    return <SkeletonAcademicApprovals />;
+  }
 
   return (
     <div className="p-4 sm:p-8 space-y-8 max-w-7xl mx-auto font-sans antialiased text-slate-800">
@@ -79,7 +85,7 @@ const AcademicApprovals = () => {
         </div>
       </div>
 
-      {/* Conditional Grading Window Warning Banner (Displays ONLY when <= 12 days to term end) */}
+      {/* Conditional Grading Window Warning Banner */}
       {showGradingBanner && (
         <div className="bg-amber-50/70 border border-amber-200/80 p-5 rounded-3xl flex items-center space-x-4 shadow-sm">
           <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
@@ -188,14 +194,8 @@ const AcademicApprovals = () => {
           </div>
         </div>
 
-        {/* Loading State */}
-        {isLoading ? (
-          <div className="py-20 flex flex-col items-center justify-center space-y-3">
-            <Spinner size="md" color="brand-blue" />
-            <p className="text-xs font-bold text-slate-400">Loading academic submission queue...</p>
-          </div>
-        ) : filteredSubmissions.length === 0 ? (
-          /* Empty State View */
+        {/* Empty State View */}
+        {filteredSubmissions.length === 0 ? (
           <div className="py-16 text-center space-y-4">
             <div className="w-16 h-16 bg-slate-50 rounded-3xl text-slate-300 flex items-center justify-center mx-auto border border-slate-100">
               <Inbox size={32} />
