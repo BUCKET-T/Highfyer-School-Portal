@@ -20,6 +20,15 @@ export const useAdminDashboardLogic = () => {
   // Portal Traffic Derived Chart Points
   const [trafficData, setTrafficData] = useState([10, 15, 20, 25, 30, 40, 60]);
 
+  // Helper: Resolve active admin UUID
+  const getActiveAdminId = useCallback(async () => {
+    const activeAdminId = sessionStorage.getItem('active_admin_id');
+    if (activeAdminId) return activeAdminId;
+
+    const { data: authData } = await supabaseClient.auth.getUser();
+    return authData?.user?.id || null;
+  }, []);
+
   // Fetch real-time metrics, active session, broadcast check, and system activity logs from Supabase
   const fetchDashboardData = useCallback(async () => {
     setIsLoadingLogs(true);
@@ -76,31 +85,18 @@ export const useAdminDashboardLogic = () => {
         setActiveSessionText('Term 1, 2025/2026 Session');
       }
 
-      // 4. Fetch Logged-in Admin Profile Avatar & Full Name for Greeting & Avatar View
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (user) {
+      // 4. Fetch Logged-in Admin Profile strictly using active_admin_id
+      const targetUserId = await getActiveAdminId();
+      if (targetUserId) {
         const { data: userProfile, error: userProfileError } = await supabaseClient
           .from('profiles')
-          .select('full_name, avatar_url')
-          .eq('email', user.email)
-          .single();
+          .select('full_name, avatar_url, role, role_title')
+          .eq('id', targetUserId)
+          .maybeSingle();
 
         if (!userProfileError && userProfile) {
           if (userProfile.full_name) setAdminName(userProfile.full_name);
           if (userProfile.avatar_url) setAdminAvatar(userProfile.avatar_url);
-        }
-      }
-
-      // Fallback if auth user lookup fails: grab the first profile row
-      if (!adminName || adminName === 'Admin Director') {
-        const { data: profileData, error: profileError } = await supabaseClient
-          .from('profiles')
-          .select('full_name, avatar_url')
-          .limit(1);
-
-        if (!profileError && profileData && profileData.length > 0) {
-          if (profileData[0].avatar_url) setAdminAvatar(profileData[0].avatar_url);
-          if (profileData[0].full_name) setAdminName(profileData[0].full_name);
         }
       }
 
@@ -133,7 +129,7 @@ export const useAdminDashboardLogic = () => {
     } finally {
       setIsLoadingLogs(false);
     }
-  }, [adminName]);
+  }, [getActiveAdminId]);
 
   useEffect(() => {
     fetchDashboardData();

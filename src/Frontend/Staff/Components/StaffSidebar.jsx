@@ -1,16 +1,48 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useStaffSidebarLogic } from '../../../Backend/Staff/StaffSidebarLogic';
+import SkeletonStaffSidebar from '../../Shared/Staff/SkeletonStaffSidebar';
 
-// Import the actual school logo asset relative to this component's depth
+// Import school logo asset relative to component depth
 import schoolLogo from '../../../assets/logo.png';
 
 const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
   const navigate = useNavigate();
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const {
+    userProfile,
+    hasNewFeed,
+    hasApprovedGrades,
+    isLoading,
+    isMobileOpen,
+    setIsMobileOpen,
+    showLogoutModal,
+    setShowLogoutModal,
+    handleFeedClick,
+    handleGradebookClick,
+    handleConfirmLogout,
+  } = useStaffSidebarLogic();
 
-  // Navigation Links array matching your exact UI layout
+  if (isLoading) {
+    return <SkeletonStaffSidebar />;
+  }
+
+  const rawFullName = userProfile?.full_name || 'Staff Member';
+  
+  // Robust fallback: uses role_title if available; otherwise formats role and grade nicely
+  const roleTitle = userProfile?.role_title || 
+    (userProfile?.grade ? `EDUCATOR (${userProfile.grade})` : userProfile?.role?.toUpperCase() || 'Educator');
+
+  const avatarUrl = userProfile?.avatar_url || '';
+
+  const educatorInitials = rawFullName
+    .split(' ')
+    .filter(Boolean)
+    .map(n => n[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
+
   const navItems = [
     {
       name: 'Dashboard',
@@ -34,6 +66,8 @@ const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
     {
       name: 'Gradebook',
       path: '/staff/gradebook',
+      hasBadge: hasApprovedGrades,
+      onClick: handleGradebookClick,
       icon: (
         <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
@@ -62,6 +96,8 @@ const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
     {
       name: 'Staff Feed',
       path: '/staff/feed',
+      hasBadge: hasNewFeed,
+      onClick: handleFeedClick,
       icon: (
         <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 5c1.657 0 3 1.343 3 3v1c0 1.657-1.343 3-3 3S3 10.657 3 9V8c0-1.657 1.343-3 3-3z" />
@@ -82,39 +118,23 @@ const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
     },
   ];
 
-  const handleConfirmLogout = () => {
-    setShowLogoutModal(false);
-    navigate('/staff/login');
-  };
-
   const SidebarContent = ({ forceExpanded = false }) => {
     const collapsed = isCollapsed && !forceExpanded;
 
     return (
       <div className={`flex flex-col h-full justify-between ${collapsed ? 'p-3 items-center' : 'p-5'} text-slate-300 overflow-x-hidden`}>
-        
-        {/* Top Branding Header with School Logo & Collapse Toggle */}
         <div className="space-y-6 w-full">
           <div className={`flex items-center ${collapsed ? 'justify-center flex-col space-y-3' : 'space-x-3 justify-between'} px-1 pt-2`}>
             <div className="flex items-center space-x-3 overflow-hidden">
-              <img
-                src={schoolLogo}
-                alt="Highflyer Academy Logo"
-                className="w-10 h-10 object-contain flex-shrink-0"
-              />
+              <img src={schoolLogo} alt="Highflyer Academy Logo" className="w-10 h-10 object-contain flex-shrink-0" />
               {!collapsed && (
                 <div className="whitespace-nowrap overflow-hidden">
-                  <h2 className="text-base font-extrabold text-white tracking-tight leading-none">
-                    Highflyer
-                  </h2>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pt-1">
-                    STAFF PORTAL
-                  </p>
+                  <h2 className="text-base font-extrabold text-white tracking-tight leading-none">Highflyer</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pt-1">STAFF PORTAL</p>
                 </div>
               )}
             </div>
 
-            {/* Collapse Toggle Button (Desktop Only) */}
             {!forceExpanded && (
               <button
                 type="button"
@@ -129,33 +149,43 @@ const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
             )}
           </div>
 
-          {/* Navigation Links */}
           <nav className="space-y-2 w-full">
             {navItems.map((item) => (
               <NavLink
                 key={item.name}
                 to={item.path}
-                onClick={() => setIsMobileOpen(false)}
+                onClick={() => {
+                  if (item.onClick) item.onClick();
+                  else setIsMobileOpen(false);
+                }}
                 title={collapsed ? item.name : ''}
                 className={({ isActive }) =>
-                  `flex items-center ${collapsed ? 'justify-center px-0 py-3' : 'space-x-3.5 px-4 py-3'} rounded-2xl text-sm font-extrabold transition-all cursor-pointer ${
+                  `flex items-center justify-between ${collapsed ? 'justify-center px-0 py-3' : 'px-4 py-3'} rounded-2xl text-sm font-extrabold transition-all cursor-pointer relative ${
                     isActive
                       ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/30'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                   }`
                 }
               >
-                {item.icon}
-                {!collapsed && <span className="whitespace-nowrap overflow-hidden">{item.name}</span>}
+                <div className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3.5'}`}>
+                  {item.icon}
+                  {!collapsed && <span className="whitespace-nowrap overflow-hidden">{item.name}</span>}
+                </div>
+
+                {item.hasBadge && (
+                  <span
+                    className={`w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse flex-shrink-0 ${
+                      collapsed ? 'absolute top-2 right-2 ring-2 ring-[#1B253B]' : 'ml-2 ring-2 ring-[#1B253B]'
+                    }`}
+                    title="New Update"
+                  />
+                )}
               </NavLink>
             ))}
           </nav>
         </div>
 
-        {/* Bottom Section: Logout Button + Teacher Card */}
         <div className={`space-y-4 pt-6 border-t border-slate-800/80 w-full ${collapsed ? 'flex flex-col items-center' : ''}`}>
-          
-          {/* Logout Trigger Button */}
           <button
             type="button"
             onClick={() => setShowLogoutModal(true)}
@@ -168,34 +198,32 @@ const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
             {!collapsed && <span className="whitespace-nowrap overflow-hidden">Logout</span>}
           </button>
 
-          {/* Teacher Card Below Logout (Hidden when collapsed) */}
           {!collapsed && (
-            <div className="bg-slate-800/70 border border-slate-700/60 p-3.5 rounded-2xl flex items-center space-x-3.5 shadow-sm w-full overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-                alt="Mr. James Doe"
-                className="w-11 h-11 rounded-full object-cover border-2 border-sky-400 shadow-sm flex-shrink-0"
-              />
-              <div className="overflow-hidden">
-                <h4 className="text-sm font-extrabold text-white truncate">
-                  Mr. James Doe
-                </h4>
-                <p className="text-[10px] font-bold text-sky-400 uppercase tracking-wider truncate">
-                  SENIOR EDUCATOR
-                </p>
+            <button
+              type="button"
+              onClick={() => navigate('/staff/settings')}
+              className="bg-slate-800/70 hover:bg-slate-800 border border-slate-700/60 p-3.5 rounded-2xl flex items-center space-x-3.5 shadow-sm w-full overflow-hidden text-left transition-all cursor-pointer"
+            >
+              <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-sky-400 bg-sky-500 shadow-sm flex-shrink-0 flex items-center justify-center font-black text-white text-xs">
+                {avatarUrl && avatarUrl.trim() !== '' ? (
+                  <img src={avatarUrl} alt={rawFullName} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                ) : (
+                  educatorInitials
+                )}
               </div>
-            </div>
+              <div className="overflow-hidden min-w-0 flex-1">
+                <h4 className="text-sm font-extrabold text-white truncate">{rawFullName}</h4>
+                <p className="text-[10px] font-bold text-sky-400 uppercase tracking-wider truncate">{roleTitle}</p>
+              </div>
+            </button>
           )}
-
         </div>
-
       </div>
     );
   };
 
   return (
     <>
-      {/* Desktop Sidebar (Fixed Left Nav with Framer Motion Smooth Width Animation) */}
       <motion.aside
         initial={false}
         animate={{ width: isCollapsed ? '80px' : '256px' }}
@@ -205,21 +233,16 @@ const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
         <SidebarContent />
       </motion.aside>
 
-      {/* Mobile Header Bar matching Parent Portal Style */}
       <div className="lg:hidden bg-white text-brand-navy p-4 flex items-center justify-between sticky top-0 z-40 border-b border-slate-100 shadow-sm">
         <div className="flex items-center space-x-3">
-          <img
-            src={schoolLogo}
-            alt="Logo"
-            className="w-8 h-8 object-contain"
-          />
+          <img src={schoolLogo} alt="Logo" className="w-8 h-8 object-contain" />
           <span className="font-extrabold text-sm tracking-tight text-brand-navy">Highflyer Staff Portal</span>
         </div>
 
         <button
           type="button"
           onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="p-2 text-slate-600 hover:text-brand-navy focus:outline-none"
+          className="p-2 text-slate-600 hover:text-brand-navy focus:outline-none cursor-pointer"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d={isMobileOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
@@ -227,17 +250,10 @@ const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
         </button>
       </div>
 
-      {/* Mobile Drawer Overlay */}
       <AnimatePresence>
         {isMobileOpen && (
           <div className="fixed inset-0 z-50 lg:hidden">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsMobileOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-            />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsMobileOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
             <motion.aside
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
@@ -245,25 +261,16 @@ const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
               transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
               className="relative w-64 bg-[#1B253B] h-full z-10 shadow-2xl"
             >
-              {/* Mobile drawer forced fully expanded to prevent view contractions */}
               <SidebarContent forceExpanded={true} />
             </motion.aside>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Logout Confirmation Modal with Staff-specific inquisition */}
       <AnimatePresence>
         {showLogoutModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowLogoutModal(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-            />
-
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowLogoutModal(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -284,20 +291,8 @@ const StaffSidebar = ({ isCollapsed, setIsCollapsed }) => {
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowLogoutModal(false)}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-2xl text-xs transition-all cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmLogout}
-                  className="bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 rounded-2xl text-xs shadow-md transition-all cursor-pointer"
-                >
-                  Log Out
-                </button>
+                <button type="button" onClick={() => setShowLogoutModal(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-2xl text-xs transition-all cursor-pointer">Cancel</button>
+                <button type="button" onClick={handleConfirmLogout} className="bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 rounded-2xl text-xs shadow-md transition-all cursor-pointer">Log Out</button>
               </div>
             </motion.div>
           </div>

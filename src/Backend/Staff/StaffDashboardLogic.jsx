@@ -14,11 +14,82 @@ export const useStaffDashboardLogic = () => {
   const [pendingGradingList, setPendingGradingList] = useState([]);
   const [todaySchedule, setTodaySchedule] = useState([]);
   
+  // Notification States
+  const [notifications, setNotifications] = useState([]);
+  const [hasUnread, setHasUnread] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true);
   const [showClassDropdown, setShowClassDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // 1. Initial Load: Fetch Profile & Assigned Classes
+  // 1. Fetch Notifications scoped to staff's assigned classes and general broadcasts
+// Fetch Notifications strictly tailored to the logged-in educator and active class
+  const fetchNotifications = useCallback(async (currentUserId, activeClass) => {
+    try {
+      // 1. General broadcasts targeted at staff (institutional news)
+      const { data: broadcasts, error: broadcastErr } = await supabaseClient
+        .from('school_broadcasts')
+        .select('*')
+        .or('target_audience.ilike.%Staff%,target_audience.ilike.%All%')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (broadcastErr) throw broadcastErr;
+
+      // 2. Academic approvals strictly owned by THIS educator AND matching the active class view
+      let approvalQuery = supabaseClient
+        .from('academic_approvals')
+        .select('*')
+        .eq('educator_id', currentUserId);
+
+      if (activeClass) {
+        approvalQuery = approvalQuery.ilike('class_name', `%${activeClass}%`);
+      }
+
+      const { data: approvals, error: approvalErr } = await approvalQuery
+        .order('submitted_at', { ascending: false })
+        .limit(5);
+
+      if (approvalErr) throw approvalErr;
+
+      const formattedBroadcasts = (broadcasts || []).map(b => ({
+        id: b.id,
+        title: b.title,
+        message: b.content ? b.content.substring(0, 80) + '...' : 'New broadcast update.',
+        time: new Date(b.created_at).toLocaleDateString(),
+        rawTimestamp: b.created_at,
+        type: 'broadcast'
+      }));
+
+      const formattedApprovals = (approvals || []).map(a => ({
+        id: a.id,
+        title: `Grade Submission: ${a.class_name} (${a.subject})`,
+        message: `Status: ${a.status || 'PENDING'}`,
+        time: a.submitted_at ? new Date(a.submitted_at).toLocaleDateString() : 'Recent',
+        rawTimestamp: a.submitted_at || new Date().toISOString(),
+        type: 'approval'
+      }));
+
+      const combined = [...formattedApprovals, ...formattedBroadcasts];
+      combined.sort((a, b) => new Date(b.rawTimestamp) - new Date(a.rawTimestamp));
+
+      setNotifications(combined);
+
+      const sessionKey = `staff_session_viewed_${currentUserId}`;
+      const lastViewed = sessionStorage.getItem(sessionKey);
+
+      if (!lastViewed) {
+        setHasUnread(combined.length > 0);
+      } else {
+        const hasNewerUpdates = combined.some(item => new Date(item.rawTimestamp) > new Date(lastViewed));
+        setHasUnread(hasNewerUpdates);
+      }
+    } catch (err) {
+      console.error('Error fetching notifications:', err.message);
+    }
+  }, []);
+
+  // 2. Initial Load: Profile, Assigned Classes & Notifications
   const initStaffProfile = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -48,7 +119,6 @@ export const useStaffDashboardLogic = () => {
       if (prof) {
         setUserProfile(prof);
 
-        // Parse assigned classes list from database
         let classesList = [];
         const rawSource = prof.assigned_classes || prof.grade;
 
@@ -64,29 +134,29 @@ export const useStaffDashboardLogic = () => {
 
         setAssignedClasses(classesList);
 
-        // Check for saved active class in localStorage
         const savedClass = localStorage.getItem('selected_staff_class');
+        let activeClass = classesList[0];
         if (savedClass && classesList.includes(savedClass)) {
-          setSelectedClass(savedClass);
+          activeClass = savedClass;
         } else {
-          setSelectedClass(classesList[0]);
-          localStorage.setItem('selected_staff_class', classesList[0]);
+          localStorage.setItem('selected_staff_class', activeClass);
         }
+        setSelectedClass(activeClass);
+
+        await fetchNotifications(prof.id, classesList);
       }
     } catch (err) {
       console.error('Error initializing staff profile:', err.message);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [fetchNotifications]);
 
-  // 2. Fetch Data for currently selectedClass
   const fetchClassMetrics = useCallback(async (currentClass) => {
     if (!currentClass) return;
     const todayDate = new Date().toISOString().split('T')[0];
 
     try {
-      // Fetch Total Students in Selected Class
       const { count: studentCount, error: studentErr } = await supabaseClient
         .from('profiles')
         .select('*', { count: 'exact', head: true })
@@ -95,7 +165,6 @@ export const useStaffDashboardLogic = () => {
 
       if (!studentErr) setTotalStudents(studentCount || 0);
 
-      // Fetch Today's Attendance Percentage for Selected Class
       const { data: attData } = await supabaseClient
         .from('attendance')
         .select('status')
@@ -111,7 +180,6 @@ export const useStaffDashboardLogic = () => {
         setTodayAttendancePercent(0);
       }
 
-      // Fetch Pending Draft Grades for Selected Class
       const { data: draftGrades, error: draftErr } = await supabaseClient
         .from('student_grades')
         .select('subject, term, academic_session, is_finalized')
@@ -141,7 +209,6 @@ export const useStaffDashboardLogic = () => {
 
       setPendingGradingList(mappedPendingGrades);
 
-      // Fetch Schedule/Timetable for Selected Class
       const { data: scheduleData } = await supabaseClient
         .from('schedules')
         .select('*')
@@ -177,12 +244,21 @@ export const useStaffDashboardLogic = () => {
     }
   }, [selectedClass, fetchClassMetrics]);
 
-  // Handle Class Switcher Select
   const handleClassSelect = (className) => {
     setShowClassDropdown(false);
     if (className !== selectedClass) {
       setSelectedClass(className);
       localStorage.setItem('selected_staff_class', className);
+    }
+  };
+
+  const toggleNotifications = () => {
+    const nextState = !showNotifications;
+    setShowNotifications(nextState);
+    if (nextState && hasUnread && notifications.length > 0 && userProfile) {
+      setHasUnread(false);
+      const sessionKey = `staff_session_viewed_${userProfile.id}`;
+      sessionStorage.setItem(sessionKey, new Date().toISOString());
     }
   };
 
@@ -196,11 +272,15 @@ export const useStaffDashboardLogic = () => {
     upcomingLessonsCount,
     pendingGradingList,
     todaySchedule,
+    notifications,
+    hasUnread,
     isLoading,
     showClassDropdown,
     setShowClassDropdown,
     showNotifications,
     setShowNotifications,
     handleClassSelect,
+    toggleNotifications,
+    refreshNotifications: () => userProfile && fetchNotifications(userProfile.id, assignedClasses)
   };
 };

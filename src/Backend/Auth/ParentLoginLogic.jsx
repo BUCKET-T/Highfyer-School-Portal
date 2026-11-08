@@ -65,30 +65,32 @@ export const useParentLoginLogic = () => {
         parentProfile = profileMatches;
       }
 
-      // 5. Query and cache all children linked to this parent
-      if (parentProfile) {
-        const parentName = parentProfile.full_name;
-        const parentEmail = parentProfile.email;
+      if (!parentProfile) {
+        throw new Error('User profile record not found.');
+      }
 
-        let query = supabaseClient
-          .from('profiles')
-          .select('id, full_name, grade, avatar_url, roll_number')
-          .eq('role', 'pupil');
+      // 5. Query and cache all children linked to this parent/user
+      const parentName = parentProfile.full_name;
+      const parentEmail = parentProfile.email;
 
-        if (parentName) {
-          query = query.ilike('parent_guardian', `%${parentName}%`);
-        } else if (parentEmail) {
-          query = query.ilike('parent_guardian', `%${parentEmail}%`);
-        }
+      let query = supabaseClient
+        .from('profiles')
+        .select('id, full_name, grade, avatar_url, roll_number')
+        .eq('role', 'pupil');
 
-        const { data: children, error: childErr } = await query;
+      if (parentName) {
+        query = query.ilike('parent_guardian', `%${parentName}%`);
+      } else if (parentEmail) {
+        query = query.ilike('parent_guardian', `%${parentEmail}%`);
+      }
 
-        if (!childErr && children && children.length > 0) {
-          localStorage.setItem('parent_children', JSON.stringify(children));
-          localStorage.setItem('selected_parent_child', children[0].id);
-        } else {
-          localStorage.setItem('parent_children', JSON.stringify([]));
-        }
+      const { data: children, error: childErr } = await query;
+
+      if (!childErr && children && children.length > 0) {
+        localStorage.setItem('parent_children', JSON.stringify(children));
+        localStorage.setItem('selected_parent_child', children[0].id);
+      } else {
+        localStorage.setItem('parent_children', JSON.stringify([]));
       }
 
       showToast('Login successful! Redirecting to parent portal...', 'success');

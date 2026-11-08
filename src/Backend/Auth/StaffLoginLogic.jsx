@@ -67,20 +67,30 @@ export const useStaffLoginLogic = () => {
         .eq('id', targetUserId)
         .maybeSingle();
 
-      if (userProf) {
-        // Parse assigned classes for this specific user
-        let classesList = [];
-        const rawSource = userProf.assigned_classes || userProf.grade;
+      if (!userProf) {
+        await supabaseClient.auth.signOut();
+        throw new Error('User profile record not found.');
+      }
 
-        if (Array.isArray(rawSource)) {
-          classesList = rawSource;
-        } else if (typeof rawSource === 'string') {
-          classesList = rawSource.split(',').map((c) => c.trim()).filter(Boolean);
-        }
+      // 6. Enforce Role-Based Access Guard (Educators only)
+      const role = (userProf.role || '').toLowerCase();
+      if (role !== 'educator') {
+        await supabaseClient.auth.signOut();
+        throw new Error('Access Denied: This portal is restricted to educators.');
+      }
 
-        if (classesList.length > 0) {
-          localStorage.setItem('selected_staff_class', classesList[0]);
-        }
+      // Parse assigned classes for this specific user
+      let classesList = [];
+      const rawSource = userProf.assigned_classes || userProf.grade;
+
+      if (Array.isArray(rawSource)) {
+        classesList = rawSource;
+      } else if (typeof rawSource === 'string') {
+        classesList = rawSource.split(',').map((c) => c.trim()).filter(Boolean);
+      }
+
+      if (classesList.length > 0) {
+        localStorage.setItem('selected_staff_class', classesList[0]);
       }
 
       showToast('Login successful! Redirecting to staff portal...', 'success');

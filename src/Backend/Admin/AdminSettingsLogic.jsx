@@ -53,6 +53,15 @@ export const useAdminSettingsLogic = () => {
     }, 4000);
   }, []);
 
+  // Helper: Resolve active admin UUID
+  const getActiveAdminId = useCallback(async () => {
+    const activeAdminId = sessionStorage.getItem('active_admin_id');
+    if (activeAdminId) return activeAdminId;
+
+    const { data: authData } = await supabaseClient.auth.getUser();
+    return authData?.user?.id || null;
+  }, []);
+
   // Fetch System Activity Logs from Supabase
   const fetchActivityLogs = useCallback(async () => {
     setIsLoadingLogs(true);
@@ -75,19 +84,22 @@ export const useAdminSettingsLogic = () => {
   // Fetch initial profile & active academic session data from Supabase
   const fetchAdminData = useCallback(async () => {
     try {
-      // Fetch Profile
+      const targetUserId = await getActiveAdminId();
+      if (!targetUserId) return;
+
+      // Fetch Profile strictly by active admin ID
       const { data: profileData, error: profileError } = await supabaseClient
         .from('profiles')
         .select('*')
-        .limit(1)
-        .single();
+        .eq('id', targetUserId)
+        .maybeSingle();
 
       if (profileData && !profileError) {
         setProfile({
           fullName: profileData.full_name || '',
           portalEmail: profileData.email || '',
           phone: profileData.phone || '',
-          roleTitle: profileData.role_title || '',
+          roleTitle: profileData.role_title || profileData.role || '',
           avatar: profileData.avatar_url || ''
         });
       }
@@ -99,7 +111,7 @@ export const useAdminSettingsLogic = () => {
         .eq('is_active', true)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (sessionData && !sessionError) {
         setSettings((prev) => ({
@@ -115,7 +127,7 @@ export const useAdminSettingsLogic = () => {
     } catch (err) {
       console.error('Error fetching admin settings:', err.message);
     }
-  }, []);
+  }, [getActiveAdminId]);
 
   useEffect(() => {
     fetchAdminData();
@@ -123,7 +135,7 @@ export const useAdminSettingsLogic = () => {
   }, [fetchAdminData, fetchActivityLogs]);
 
   // Handle Avatar Image Upload with Raised Threshold (45KB)
-  const handleAvatarUpload = (e) => {
+  const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -133,9 +145,23 @@ export const useAdminSettingsLogic = () => {
     }
 
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setProfile((prev) => ({ ...prev, avatar: reader.result }));
-      showToast('Avatar staged successfully!');
+    reader.onloadend = async () => {
+      const base64Avatar = reader.result;
+      setProfile((prev) => ({ ...prev, avatar: base64Avatar }));
+
+      try {
+        const targetUserId = await getActiveAdminId();
+        if (targetUserId) {
+          await supabaseClient
+            .from('profiles')
+            .update({ avatar_url: base64Avatar })
+            .eq('id', targetUserId);
+          showToast('Avatar updated successfully!');
+        }
+      } catch (err) {
+        console.error('Error saving avatar:', err.message);
+        showToast('Failed to save avatar.', 'error');
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -163,7 +189,12 @@ export const useAdminSettingsLogic = () => {
     setIsSaving(true);
 
     try {
-      // 1. Update profiles table
+      const targetUserId = await getActiveAdminId();
+      if (!targetUserId) {
+        throw new Error('Active admin session not found.');
+      }
+
+      // 1. Update profiles table strictly by ID
       const { error: profileError } = await supabaseClient
         .from('profiles')
         .update({
@@ -173,7 +204,7 @@ export const useAdminSettingsLogic = () => {
           avatar_url: profile.avatar,
           updated_at: new Date()
         })
-        .eq('full_name', profile.fullName);
+        .eq('id', targetUserId);
 
       if (profileError) throw profileError;
 

@@ -156,7 +156,7 @@ const StaffSettings = () => {
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 sm:space-x-5">
-                    <div className="relative inline-block w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-sky-100 shadow-inner overflow-hidden flex items-center justify-center bg-gradient-to-tr from-sky-500 to-indigo-600">
+                    <div className="relative  w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-sky-100 shadow-inner overflow-hidden flex items-center justify-center bg-gradient-to-tr from-sky-500 to-indigo-600">
                       {avatarUrl && avatarUrl.trim() !== '' ? (
                         <img
                           src={avatarUrl}

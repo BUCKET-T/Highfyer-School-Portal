@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import  supabaseClient  from '../../config/supabaseClient';
+import supabaseClient from '../../config/supabaseClient';
 
 export const useAdminLoginLogic = () => {
   const navigate = useNavigate();
@@ -13,7 +13,6 @@ export const useAdminLoginLogic = () => {
 
   const showToast = (message, type) => {
     setToast({ message, type, visible: true });
-    // Auto-dismiss error toasts after 4 seconds
     if (type === 'error') {
       setTimeout(() => {
         setToast((prev) => (prev.type === 'error' ? { ...prev, visible: false } : prev));
@@ -27,38 +26,66 @@ export const useAdminLoginLogic = () => {
     setToast({ message: '', type: '', visible: false });
 
     try {
-      // 1. Check profiles table for admin / executive credentials
-      const { data: profileMatches, error: profileErr } = await supabaseClient
-        .from('profiles')
-        .select('*')
-        .eq('email', adminEmail)
-        .eq('temp_password', password);
+      // 1. Wipe previous session items to avoid active ID collisions
+      sessionStorage.removeItem('active_admin_id');
 
-      if (!profileErr && profileMatches && profileMatches.length > 0) {
-        showToast('Login successful! Redirecting to admin central...', 'success');
-        setTimeout(() => {
-          navigate('/admin/dashboard');
-        }, 1200);
-        return;
-      }
-
-      // 2. Fallback to standard Supabase Auth signInWithPassword
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
+      // 2. Authenticate first with standard Supabase Auth
+      const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
         email: adminEmail,
         password: password,
       });
 
-      if (error) throw error;
+      let userId = authData?.user?.id;
 
-      if (data?.user) {
-        showToast('Login successful! Redirecting to admin central...', 'success');
-        setTimeout(() => {
-          navigate('/admin/dashboard');
-        }, 1200);
+      // 3. Fallback check for temporary password match in profiles
+      if (authError || !userId) {
+        const { data: profileMatch, error: profileErr } = await supabaseClient
+          .from('profiles')
+          .select('*')
+          .ilike('email', adminEmail.trim())
+          .eq('temp_password', password)
+          .maybeSingle();
+
+        if (profileErr || !profileMatch) {
+          throw new Error('Invalid credentials. Please check your admin email and password.');
+        }
+        userId = profileMatch.id;
       }
+
+      // 4. Fetch all profile rows associated with this user ID or email
+      const { data: profiles, error: profQueryErr } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .or(`id.eq.${userId},email.ilike.${adminEmail.trim()}`);
+
+      if (profQueryErr || !profiles || profiles.length === 0) {
+        throw new Error('User profile record not found.');
+      }
+
+      // 5. Filter specifically for the administrative record
+      const adminProfile = profiles.find((p) => {
+        const r = (p.role || '').toLowerCase();
+        const t = (p.role_title || '').toLowerCase();
+        return r === 'admin' || r.includes('admin') || t.includes('admin') || t.includes('assistant');
+      });
+
+      if (!adminProfile) {
+        await supabaseClient.auth.signOut();
+        throw new Error('Access Denied: This account lacks administrative privileges.');
+      }
+
+      // 6. Store active admin ID to bind sidebar and settings views
+      sessionStorage.setItem('active_admin_id', adminProfile.id);
+
+      showToast('Login successful! Redirecting to admin central...', 'success');
+      setTimeout(() => {
+        navigate('/admin/dashboard');
+      }, 1200);
+
     } catch (err) {
       console.error('Admin login error:', err.message);
       showToast(err.message || 'Invalid credentials. Please check your admin email and password.', 'error');
+    } finally {
       setIsLoading(false);
     }
   };
