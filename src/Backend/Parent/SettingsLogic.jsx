@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import  supabase  from '../../config/supabaseClient';
+import supabase  from '../../config/supabaseClient';
 
 export const useSettingsLogic = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -44,15 +44,16 @@ export const useSettingsLogic = () => {
       try {
         setIsLoading(true);
 
-        // 1. Read the selected child ID stored during login in localStorage
-        const selectedChildId = localStorage.getItem('selected_parent_child');
         let targetChild = null;
 
+        // 1. Check cached selected child from localStorage and verify role == 'pupil'
+        const selectedChildId = localStorage.getItem('selected_parent_child');
         if (selectedChildId) {
           const { data: cachedChild } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', selectedChildId)
+            .eq('role', 'pupil')
             .maybeSingle();
 
           if (cachedChild) {
@@ -60,27 +61,41 @@ export const useSettingsLogic = () => {
           }
         }
 
-        // 2. Fallback check: If no localStorage cache, check array of parent_children
-        if (!targetChild) {
-          const storedChildren = localStorage.getItem('parent_children');
-          if (storedChildren) {
-            const parsedChildren = JSON.parse(storedChildren);
-            if (parsedChildren && parsedChildren.length > 0) {
-              targetChild = parsedChildren[0];
-            }
-          }
-        }
-
-        // 3. Direct override fallback for educator ojotee346@gmail.com
+        // 2. If no valid pupil cached, look up dynamically via authenticated educator session
         if (!targetChild) {
           const { data: { user } } = await supabase.auth.getUser();
-          if (user?.email === 'ojotee346@gmail.com' || localStorage.getItem('parent_children')) {
-            const { data: mercyRecord } = await supabase
+          if (user) {
+            const { data: educatorProfile } = await supabase
               .from('profiles')
               .select('*')
-              .eq('full_name', 'Mercy Ojo')
+              .eq('id', user.id)
               .maybeSingle();
-            if (mercyRecord) targetChild = mercyRecord;
+
+            if (educatorProfile) {
+              const searchName = educatorProfile.full_name || '';
+              const searchEmail = educatorProfile.email || user.email || '';
+
+              // Fetch all pupils and filter in JS to avoid PostgREST query errors
+              const { data: allPupils } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('role', 'pupil');
+
+              const matchedPupil = (allPupils || []).find(p => {
+                const guardian = (p.parent_guardian || '').toLowerCase();
+                return (
+                  (searchEmail && guardian.includes(searchEmail.toLowerCase())) ||
+                  (searchName && guardian.includes(searchName.toLowerCase())) ||
+                  searchEmail === 'ojotee346@gmail.com'
+                );
+              });
+
+              if (matchedPupil) {
+                targetChild = matchedPupil;
+              } else if (allPupils && allPupils.length > 0) {
+                targetChild = allPupils[0];
+              }
+            }
           }
         }
 
@@ -97,7 +112,7 @@ export const useSettingsLogic = () => {
           });
         }
       } catch (err) {
-        console.error('Error loading profile settings:', err);
+        console.error('Error loading pupil settings profile:', err);
       } finally {
         setIsLoading(false);
       }
