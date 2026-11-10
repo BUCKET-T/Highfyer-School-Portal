@@ -64,14 +64,14 @@ export const useResultLogic = () => {
     fetchSessionWards();
   }, [navigate]);
 
-  // Fetch academic sessions from Supabase and default strictly to the latest created / active session
+  // Fetch academic sessions from Supabase and default to the latest created / active session
   useEffect(() => {
     const fetchAcademicSessions = async () => {
       try {
         const { data, error } = await supabaseClient
           .from('academic_sessions')
           .select('*')
-          .order('created_at', { ascending: true });
+          .order('created_at', { ascending: false });
 
         if (!error && data && data.length > 0) {
           const options = data.map((sess) => ({
@@ -86,7 +86,7 @@ export const useResultLogic = () => {
 
           setTermOptions(options);
 
-          // Always default to the latest created session
+          // Default strictly to the latest created session
           const latestSess = options[0];
           setSelectedTerm(latestSess);
         } else {
@@ -116,8 +116,8 @@ export const useResultLogic = () => {
       setIsDataLoading(true);
 
       try {
-        const rawGrade = currentWard.grade ? String(currentWard.grade).trim() : '';
-        const cleanWardGrade = rawGrade.toLowerCase();
+        const cleanWardGrade = currentWard.grade ? String(currentWard.grade).trim().toLowerCase() : '';
+        const wardGradeNum = cleanWardGrade.replace(/[^0-9]/g, '');
 
         // 1. Fetch class educators and match precisely against assigned_classes or role_title
         const { data: educators, error: edError } = await supabaseClient
@@ -126,29 +126,17 @@ export const useResultLogic = () => {
           .eq('role', 'educator');
 
         if (!edError && educators && educators.length > 0) {
-          // Look for an educator whose assigned_classes or role_title matches the ward's grade
-          let matchedEd = educators.find((ed) => {
-            const assignedRaw = ed.assigned_classes ? String(ed.assigned_classes).trim() : '';
-            const assignedList = assignedRaw.split(',').map(c => c.trim().toLowerCase());
-            const roleTitle = ed.role_title ? String(ed.role_title).trim().toLowerCase() : '';
-
+          const matchedEd = educators.find((ed) => {
+            const assigned = ed.assigned_classes ? String(ed.assigned_classes).toLowerCase() : '';
+            const roleTitle = ed.role_title ? String(ed.role_title).toLowerCase() : '';
+            
             return (
-              assignedList.some(cls => cls === cleanWardGrade || cleanWardGrade.includes(cls) || cls.includes(cleanWardGrade)) ||
-              roleTitle.includes(cleanWardGrade)
+              assigned.includes(cleanWardGrade) ||
+              roleTitle.includes(cleanWardGrade) ||
+              (wardGradeNum && (assigned.includes(wardGradeNum) || roleTitle.includes(wardGradeNum))) ||
+              (cleanWardGrade.includes('pre') && (assigned.includes('pre') || roleTitle.includes('pre')))
             );
           });
-
-          // Fallback matching if assigned_classes is null: match role_title keywords (e.g. "Grade 6", "Pre school")
-          if (!matchedEd) {
-            matchedEd = educators.find((ed) => {
-              const roleTitle = ed.role_title ? String(ed.role_title).trim().toLowerCase() : '';
-              const gradeNum = cleanWardGrade.replace(/[^0-9]/g, '');
-              return (
-                (gradeNum && roleTitle.includes(gradeNum)) ||
-                (cleanWardGrade.includes('school') && roleTitle.includes('pre'))
-              );
-            });
-          }
 
           if (matchedEd && matchedEd.full_name) {
             const name = matchedEd.full_name;

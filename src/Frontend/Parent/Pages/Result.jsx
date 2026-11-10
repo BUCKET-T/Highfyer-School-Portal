@@ -72,7 +72,7 @@ const Results = () => {
           </div>
         </div>
 
-        {/* Term Selector & Ward Badge (Side-by-side on PC) */}
+        {/* Term Selector & Ward Badge */}
         <div className="flex flex-col sm:flex-row items-center gap-3 xl:justify-end flex-shrink-0">
           
           {/* Custom Web UI Term Dropdown */}
@@ -195,7 +195,7 @@ const Results = () => {
         </div>
       </div>
 
-      {/* Main Content Area: Conditional Rendering based on parent_portal_open flag */}
+      {/* Main Content Area */}
       {isDataLoading ? (
         <SkeletonResult />
       ) : !isPortalOpen ? (
