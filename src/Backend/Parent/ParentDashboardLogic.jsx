@@ -12,31 +12,54 @@ export const useParentDashboardLogic = () => {
   const [classEducator, setClassEducator] = useState(null);
   const [liveGrades, setLiveGrades] = useState([]);
   const [liveAssignments, setLiveAssignments] = useState([]);
-  const [liveAttendance, setLiveAttendance] = useState(95);
+  const [liveAttendance, setLiveAttendance] = useState(0);
   const [isDataLoading, setIsDataLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedChildren = localStorage.getItem('parent_children');
-      const storedSelectedId = localStorage.getItem('selected_parent_child');
+    const fetchSessionWards = async () => {
+      try {
+        const storedChildren = localStorage.getItem('parent_children');
+        const storedSelectedId = localStorage.getItem('selected_parent_child');
 
-      if (storedChildren) {
-        const parsedChildren = JSON.parse(storedChildren);
-        setWards(parsedChildren);
+        const { data: authData } = await supabaseClient.auth.getUser();
+        const userEmail = authData?.user?.email;
 
-        if (parsedChildren.length > 0) {
-          const active = parsedChildren.find((w) => w.id === storedSelectedId) || parsedChildren[0];
-          setCurrentWard(active);
+        if (userEmail) {
+          const { data: linkedWards, error } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('email', userEmail)
+            .eq('role', 'pupil');
+
+          if (!error && linkedWards && linkedWards.length > 0) {
+            setWards(linkedWards);
+            localStorage.setItem('parent_children', JSON.stringify(linkedWards));
+
+            const active = linkedWards.find((w) => w.id === storedSelectedId) || linkedWards[0];
+            setCurrentWard(active);
+            localStorage.setItem('selected_parent_child', active.id);
+          } else if (storedChildren) {
+            const parsedChildren = JSON.parse(storedChildren);
+            setWards(parsedChildren);
+            if (parsedChildren.length > 0) {
+              const active = parsedChildren.find((w) => w.id === storedSelectedId) || parsedChildren[0];
+              setCurrentWard(active);
+            }
+          } else {
+            navigate('/parent/login');
+          }
+        } else {
+          navigate('/parent/login');
         }
-      } else {
+      } catch (err) {
+        console.error('Error loading parent session data:', err);
         navigate('/parent/login');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error('Error loading parent session data:', err);
-      navigate('/parent/login');
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    fetchSessionWards();
   }, [navigate]);
 
   // Fetch live metrics when active ward changes
@@ -48,11 +71,11 @@ export const useParentDashboardLogic = () => {
       try {
         // 1. Fetch Class Educator based on currentWard's grade
         if (currentWard.grade) {
+          const cleanGrade = currentWard.grade.trim();
           const { data: educatorData } = await supabaseClient
             .from('profiles')
-            .select('full_name, avatar_url, role_title, email')
-            .eq('role', 'educator')
-            .ilike('assigned_classes', `%${currentWard.grade}%`)
+            .select('*')
+            .ilike('assigned_classes', `%${cleanGrade}%`)
             .maybeSingle();
 
           setClassEducator(educatorData || null);
@@ -81,16 +104,23 @@ export const useParentDashboardLogic = () => {
           setLiveAssignments([]);
         }
 
-        // 4. Fetch Attendance records if available
+        // 4. Fetch Attendance records for this ward (cumulative calculation per term)
         const { data: attendanceData } = await supabaseClient
           .from('attendance')
           .select('*')
           .eq('pupil_id', currentWard.id);
 
         if (attendanceData && attendanceData.length > 0) {
-          const presentCount = attendanceData.filter(a => a.status === 'PRESENT' || a.is_present).length;
-          const calculatedRate = Math.round((presentCount / attendanceData.length) * 100);
-          setLiveAttendance(calculatedRate);
+          // You can filter by term if needed (e.g. .eq('term', 'Term 3'))
+          const totalDays = attendanceData.length;
+          const presentDays = attendanceData.filter(
+            (a) => a.status === 'PRESENT' || a.status === 'Present' || a.is_present === true
+          ).length;
+
+          const cumulativeRate = Math.round((presentDays / totalDays) * 100);
+          setLiveAttendance(cumulativeRate);
+        } else {
+          setLiveAttendance(0); // Resets to 0% if no attendance records exist for the term
         }
 
       } catch (err) {
@@ -124,7 +154,6 @@ export const useParentDashboardLogic = () => {
     }
   };
 
-  // Helper to extract initials (e.g., "Mercy Ojo" -> "MO")
   const getInitials = (name) => {
     if (!name) return 'P';
     const parts = name.trim().split(' ');

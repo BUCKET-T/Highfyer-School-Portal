@@ -66,15 +66,26 @@ export const useParentLoginLogic = () => {
         throw new Error('User profile record not found.');
       }
 
-      // 2. Strict Check: Query ONLY the junction table via RPC
-      const { data: matchedChildren, error: rpcErr } = await supabaseClient
-        .rpc('get_parent_wards', { p_parent_id: parentProfile.id });
+      const lookupEmail = parentProfile.email || emailOrId;
 
-      if (rpcErr) {
-        throw new Error('Failed to verify linked ward records.');
+      // 2. Fetch ALL pupil wards sharing this parent email
+      let { data: matchedChildren, error: queryErr } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('email', lookupEmail)
+        .eq('role', 'pupil');
+
+      // 3. Fallback to RPC junction table if direct email query yields nothing
+      if (queryErr || !matchedChildren || matchedChildren.length === 0) {
+        const { data: rpcChildren, error: rpcErr } = await supabaseClient
+          .rpc('get_parent_wards', { p_parent_id: parentProfile.id });
+
+        if (!rpcErr && rpcChildren && rpcChildren.length > 0) {
+          matchedChildren = rpcChildren;
+        }
       }
 
-      // 3. Strict Enforcement: Block if no explicit entry exists in parent_pupil_links
+      // 4. Strict Enforcement: Block if no linked pupils found
       if (!matchedChildren || matchedChildren.length === 0) {
         throw new Error('Access denied: This email is not linked to any registered pupil ward.');
       }

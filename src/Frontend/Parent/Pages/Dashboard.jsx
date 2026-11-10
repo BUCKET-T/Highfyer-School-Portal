@@ -52,7 +52,7 @@ const Dashboard = () => {
         </div>
 
         {/* Right Action Bar: Multi-Ward Dropdown Switcher */}
-        <div className="flex items-center justify-between sm:justify-end space-x-3 pt-2 md:pt-0 border-t border-slate-100 md:border-none">
+        <div className="flex items-center justify-end space-x-3 pt-2 md:pt-0 border-t border-slate-100 md:border-none">
           <div className="relative">
             <button
               type="button"
@@ -103,7 +103,7 @@ const Dashboard = () => {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2.5 z-50 space-y-1.5"
+                    className="absolute right-0 sm:right-0 left-auto mt-2 w-[calc(100vw-2rem)] sm:w-72 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2.5 z-50 space-y-1.5"
                   >
                     <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-100 mb-1">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
