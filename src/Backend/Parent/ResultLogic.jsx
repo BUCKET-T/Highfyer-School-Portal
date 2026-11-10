@@ -64,39 +64,44 @@ export const useResultLogic = () => {
     fetchSessionWards();
   }, [navigate]);
 
-  // Fetch academic sessions from Supabase and default to the latest created / active session
+  // Fetch academic sessions and strictly target the active session where is_active is true
   useEffect(() => {
     const fetchAcademicSessions = async () => {
       try {
         const { data, error } = await supabaseClient
           .from('academic_sessions')
-          .select('*')
-          .order('created_at', { ascending: false });
+          .select('*');
 
         if (!error && data && data.length > 0) {
           const options = data.map((sess) => ({
             id: sess.id,
             session_name: sess.session_name,
             term_name: sess.term_name,
-            is_active: sess.is_active,
+            is_active: Boolean(sess.is_active),
             parent_portal_open: sess.parent_portal_open !== undefined ? Boolean(sess.parent_portal_open) : true,
             label: `${sess.term_name}, ${sess.session_name} Academic Session`,
             created_at: sess.created_at,
           }));
 
+          // Sort options: active term goes first
+          options.sort((a, b) => {
+            if (a.is_active === b.is_active) return 0;
+            return a.is_active ? -1 : 1;
+          });
+
           setTermOptions(options);
 
-          // Default strictly to the latest created session
-          const latestSess = options[0];
-          setSelectedTerm(latestSess);
+          // Force selection to the active term
+          const activeTerm = options.find((o) => o.is_active) || options[0];
+          setSelectedTerm(activeTerm);
         } else {
           const fallback = {
             id: 'default-1',
             session_name: '2027/2028',
-            term_name: 'Term 1',
+            term_name: 'Term 3',
             is_active: true,
             parent_portal_open: true,
-            label: 'Term 1, 2027/2028 Academic Session',
+            label: 'Term 3, 2027/2028 Academic Session',
           };
           setTermOptions([fallback]);
           setSelectedTerm(fallback);
@@ -123,7 +128,7 @@ export const useResultLogic = () => {
         const { data: educators, error: edError } = await supabaseClient
           .from('profiles')
           .select('*')
-          .eq('role', 'educator');
+          .ilike('role', 'educator');
 
         if (!edError && educators && educators.length > 0) {
           const matchedEd = educators.find((ed) => {
@@ -133,8 +138,7 @@ export const useResultLogic = () => {
             return (
               assigned.includes(cleanWardGrade) ||
               roleTitle.includes(cleanWardGrade) ||
-              (wardGradeNum && (assigned.includes(wardGradeNum) || roleTitle.includes(wardGradeNum))) ||
-              (cleanWardGrade.includes('pre') && (assigned.includes('pre') || roleTitle.includes('pre')))
+              (wardGradeNum && (assigned.includes(wardGradeNum) || roleTitle.includes(wardGradeNum)))
             );
           });
 
