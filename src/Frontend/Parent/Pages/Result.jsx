@@ -40,6 +40,7 @@ const Results = () => {
     termGrades,
     classPositionText,
     cumulativeAverage,
+    classEducator,
   } = useResultLogic();
 
   const [isTermDropdownOpen, setIsTermDropdownOpen] = useState(false);
@@ -47,6 +48,8 @@ const Results = () => {
   if (isLoading || !currentWard) {
     return <SkeletonResult />;
   }
+
+  const isPortalOpen = selectedTerm?.parent_portal_open ?? true;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-8 bg-slate-50/60 min-h-screen">
@@ -162,9 +165,9 @@ const Results = () => {
         <div className="bg-white p-6 rounded-3xl border-l-4 border-l-brand-blue shadow-sm border border-slate-100 space-y-2">
           <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Term Cumulative Average</p>
           <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold text-brand-navy">{cumulativeAverage}</span>
+            <span className="text-3xl font-extrabold text-brand-navy">{isPortalOpen ? cumulativeAverage : '---'}</span>
             <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
-              Distinction Grade
+              {isPortalOpen ? 'Distinction Grade' : 'Restricted'}
             </span>
           </div>
         </div>
@@ -172,7 +175,7 @@ const Results = () => {
         <div className="bg-white p-6 rounded-3xl border-l-4 border-l-brand-navy shadow-sm border border-slate-100 space-y-2">
           <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Term Class Position</p>
           <div className="flex items-baseline justify-between">
-            <span className="text-2xl sm:text-3xl font-extrabold text-brand-navy">{classPositionText}</span>
+            <span className="text-2xl sm:text-3xl font-extrabold text-brand-navy">{isPortalOpen ? classPositionText : 'Restricted'}</span>
             <span className="text-xs font-bold text-brand-blue bg-brand-sky/20 px-2.5 py-1 rounded-full uppercase">
               {currentWard.grade || 'Grade'}
             </span>
@@ -182,17 +185,34 @@ const Results = () => {
         <div className="bg-white p-6 rounded-3xl border-l-4 border-l-amber-400 shadow-sm border border-slate-100 space-y-2">
           <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Term Result Status</p>
           <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-extrabold text-emerald-600">Verified</span>
+            <span className={`text-2xl font-extrabold ${isPortalOpen ? 'text-emerald-600' : 'text-amber-600'}`}>
+              {isPortalOpen ? 'Verified' : 'Locked'}
+            </span>
             <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
-              Formal Approval
+              {isPortalOpen ? 'Formal Approval' : 'Admin Restricted'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Recharts Bar Chart & Detailed Results Section */}
+      {/* Main Content Area: Conditional Rendering based on parent_portal_open flag */}
       {isDataLoading ? (
         <SkeletonResult />
+      ) : !isPortalOpen ? (
+        /* Admin Restricted Empty State */
+        <div className="bg-white p-12 rounded-3xl shadow-sm border border-slate-100 text-center flex flex-col items-center justify-center space-y-4">
+          <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-3xl flex items-center justify-center shadow-inner">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <div className="space-y-1 max-w-md">
+            <h3 className="text-lg font-extrabold text-brand-navy">Result Portal Locked</h3>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+              Viewing results for <span className="font-bold text-brand-navy">{selectedTerm ? `${selectedTerm.term_name}, ${selectedTerm.session_name}` : 'this term'}</span> is currently restricted by the school administration. Please check back later or contact support for further inquiries.
+            </p>
+          </div>
+        </div>
       ) : termGrades.length > 0 ? (
         <>
           {/* Recharts Bar Chart Section */}
@@ -296,14 +316,24 @@ const Results = () => {
           <span className="text-[10px] font-bold text-brand-sky uppercase tracking-wider">{currentWard.grade || 'Grade'}</span>
         </div>
         <p className="text-xs sm:text-sm text-slate-200 font-medium italic leading-relaxed">
-          "An exceptional term performance! {currentWard.full_name} shows brilliant cognitive growth across all learning areas and consistent participation."
+          {isPortalOpen
+            ? `"An exceptional term performance! ${currentWard.full_name} shows brilliant cognitive growth across all learning areas and consistent participation."`
+            : `"Class teacher assessments are currently locked while the result portal is restricted by administration."`}
         </p>
         <div className="pt-2 flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-full bg-brand-blue flex items-center justify-center font-bold text-xs text-white">
-            BA
+          <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-brand-blue text-white font-bold text-xs flex-shrink-0">
+            {classEducator.avatar_url ? (
+              <img 
+                src={classEducator.avatar_url} 
+                alt={classEducator.name} 
+                className="w-full h-full object-cover" 
+              />
+            ) : (
+              <span className="uppercase">{classEducator.initials}</span>
+            )}
           </div>
           <div>
-            <p className="text-xs font-bold text-white">Ms. Beatrice Adewale</p>
+            <p className="text-xs font-bold text-white">{classEducator.name}</p>
             <p className="text-[10px] font-semibold text-slate-400">Class Educator, Highflyer Kiddies Academy</p>
           </div>
         </div>

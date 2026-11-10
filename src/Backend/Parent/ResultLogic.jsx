@@ -10,10 +10,11 @@ export const useResultLogic = () => {
   const [isDataLoading, setIsDataLoading] = useState(true);
 
   const [termOptions, setTermOptions] = useState([]);
-  const [selectedTerm, setSelectedTerm] = useState(null); // { session_name, term_name }
+  const [selectedTerm, setSelectedTerm] = useState(null);
   const [termGrades, setTermGrades] = useState([]);
   const [classPositionText, setClassPositionText] = useState('Calculating...');
   const [classSize, setClassSize] = useState(0);
+  const [classEducator, setClassEducator] = useState({ name: 'School Educator', initials: 'SE', avatar_url: null });
 
   // Synchronize active ward with localStorage shared across dashboard tabs
   useEffect(() => {
@@ -63,14 +64,14 @@ export const useResultLogic = () => {
     fetchSessionWards();
   }, [navigate]);
 
-  // Fetch academic sessions from Supabase
+  // Fetch academic sessions from Supabase and default strictly to the latest created / active session
   useEffect(() => {
     const fetchAcademicSessions = async () => {
       try {
         const { data, error } = await supabaseClient
           .from('academic_sessions')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: true });
 
         if (!error && data && data.length > 0) {
           const options = data.map((sess) => ({
@@ -78,21 +79,24 @@ export const useResultLogic = () => {
             session_name: sess.session_name,
             term_name: sess.term_name,
             is_active: sess.is_active,
+            parent_portal_open: sess.parent_portal_open !== undefined ? Boolean(sess.parent_portal_open) : true,
             label: `${sess.term_name}, ${sess.session_name} Academic Session`,
+            created_at: sess.created_at,
           }));
 
           setTermOptions(options);
 
-          // Default to active session, or the first one in the list
-          const activeSess = options.find((o) => o.is_active) || options[0];
-          setSelectedTerm(activeSess);
+          // Always default to the latest created session
+          const latestSess = options[0];
+          setSelectedTerm(latestSess);
         } else {
-          // Fallback if table is empty
           const fallback = {
             id: 'default-1',
             session_name: '2027/2028',
-            term_name: 'Term 3',
-            label: 'Term 3, 2027/2028 Academic Session',
+            term_name: 'Term 1',
+            is_active: true,
+            parent_portal_open: true,
+            label: 'Term 1, 2027/2028 Academic Session',
           };
           setTermOptions([fallback]);
           setSelectedTerm(fallback);
@@ -105,35 +109,96 @@ export const useResultLogic = () => {
     fetchAcademicSessions();
   }, []);
 
-  // Fetch student grades and calculate dynamic class ranking position based on selected session/term
+  // Fetch student grades, class rankings, and accurately matched class educator
   useEffect(() => {
     const fetchData = async () => {
       if (!currentWard || !selectedTerm) return;
       setIsDataLoading(true);
 
       try {
-        const cleanGrade = currentWard.grade ? String(currentWard.grade).trim() : '';
+        const rawGrade = currentWard.grade ? String(currentWard.grade).trim() : '';
+        const cleanWardGrade = rawGrade.toLowerCase();
 
-        // 1. Fetch all pupils in the same grade/class
+        // 1. Fetch class educators and match precisely against assigned_classes or role_title
+        const { data: educators, error: edError } = await supabaseClient
+          .from('profiles')
+          .select('*')
+          .eq('role', 'educator');
+
+        if (!edError && educators && educators.length > 0) {
+          // Look for an educator whose assigned_classes or role_title matches the ward's grade
+          let matchedEd = educators.find((ed) => {
+            const assignedRaw = ed.assigned_classes ? String(ed.assigned_classes).trim() : '';
+            const assignedList = assignedRaw.split(',').map(c => c.trim().toLowerCase());
+            const roleTitle = ed.role_title ? String(ed.role_title).trim().toLowerCase() : '';
+
+            return (
+              assignedList.some(cls => cls === cleanWardGrade || cleanWardGrade.includes(cls) || cls.includes(cleanWardGrade)) ||
+              roleTitle.includes(cleanWardGrade)
+            );
+          });
+
+          // Fallback matching if assigned_classes is null: match role_title keywords (e.g. "Grade 6", "Pre school")
+          if (!matchedEd) {
+            matchedEd = educators.find((ed) => {
+              const roleTitle = ed.role_title ? String(ed.role_title).trim().toLowerCase() : '';
+              const gradeNum = cleanWardGrade.replace(/[^0-9]/g, '');
+              return (
+                (gradeNum && roleTitle.includes(gradeNum)) ||
+                (cleanWardGrade.includes('school') && roleTitle.includes('pre'))
+              );
+            });
+          }
+
+          if (matchedEd && matchedEd.full_name) {
+            const name = matchedEd.full_name;
+            const parts = name.split(' ');
+            const initials = parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}` : name.slice(0, 2).toUpperCase();
+            setClassEducator({ 
+              name, 
+              initials, 
+              avatar_url: matchedEd.avatar_url || null 
+            });
+          } else {
+            setClassEducator({ 
+              name: 'School Educator', 
+              initials: 'SE', 
+              avatar_url: null 
+            });
+          }
+        }
+
+        // Check if portal is locked by admin
+        const isPortalOpen = selectedTerm.parent_portal_open !== false;
+        if (!isPortalOpen) {
+          setTermGrades([]);
+          setClassPositionText('Restricted');
+          setIsDataLoading(false);
+          return;
+        }
+
+        // 2. Fetch all pupils in the same grade/class
         const { data: classmates, error: classError } = await supabaseClient
           .from('profiles')
           .select('*')
           .eq('role', 'pupil');
 
         const matchedClassmates = !classError && classmates 
-          ? classmates.filter(p => p.grade && p.grade.trim().toLowerCase() === cleanGrade.toLowerCase())
+          ? classmates.filter(p => {
+              const pGrade = p.grade ? String(p.grade).trim().toLowerCase() : '';
+              return pGrade === cleanWardGrade;
+            })
           : [currentWard];
 
         const totalClassmates = matchedClassmates.length > 0 ? matchedClassmates.length : 1;
         setClassSize(totalClassmates);
 
-        // 2. Fetch all student grades
+        // 3. Fetch all student grades
         const { data: allGrades, error: gradesError } = await supabaseClient
           .from('student_grades')
           .select('*');
 
         if (!gradesError && allGrades) {
-          // Filter by term and academic session
           const termFilteredGrades = allGrades.filter((item) => {
             const itemTerm = (item.term || '').trim().toLowerCase();
             const targetTerm = (selectedTerm.term_name || '').trim().toLowerCase();
@@ -146,7 +211,6 @@ export const useResultLogic = () => {
             return matchesTerm && matchesSession;
           });
 
-          // Compute average score per pupil for this session/term
           const pupilAverages = {};
           termFilteredGrades.forEach((row) => {
             const pId = row.pupil_id;
@@ -241,5 +305,6 @@ export const useResultLogic = () => {
     classSize,
     classPositionText,
     cumulativeAverage,
+    classEducator,
   };
 };
