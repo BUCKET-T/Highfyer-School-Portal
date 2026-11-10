@@ -163,7 +163,7 @@ const Feed = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 0 }}
-              className="relative bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-100 z-10 space-y-6 text-left"
+              className="relative bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-100 z-10 space-y-6 text-left scrollbar-thin scrollbar-thumb-slate-200"
             >
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <span className={`text-[10px] font-extrabold px-3 py-1 rounded-xl uppercase tracking-wider border ${selectedPostModal.categoryStyle}`}>

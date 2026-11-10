@@ -18,7 +18,6 @@ export const useFeedLogic = () => {
           .order('created_at', { ascending: false });
 
         if (!error && data) {
-          // Filter announcements targeted to parents or the general portal
           const parentFeedData = data.filter((item) => {
             const target = (item.target_audience || '').toLowerCase();
             return (
@@ -43,7 +42,6 @@ export const useFeedLogic = () => {
     fetchBroadcasts();
   }, []);
 
-  // Map database fields to UI feed post structure
   const formattedPosts = useMemo(() => {
     return rawBroadcasts.map((item) => {
       const categoryName = item.category || 'General News';
@@ -60,13 +58,17 @@ export const useFeedLogic = () => {
         categoryStyle = 'bg-amber-100 text-amber-700 border-amber-200';
       }
 
-      const formattedDate = item.created_at
-        ? new Date(item.created_at).toLocaleDateString('en-US', {
-            month: 'LONG',
+      let formattedDate = 'RECENT NOTICE';
+      if (item.created_at) {
+        const parsedDate = new Date(item.created_at);
+        if (!isNaN(parsedDate.getTime())) {
+          formattedDate = parsedDate.toLocaleDateString('en-US', {
+            month: 'long',
             day: '2-digit',
-            year: 'NUMERIC',
-          }).toUpperCase()
-        : 'RECENT NOTICE';
+            year: 'numeric',
+          }).toUpperCase();
+        }
+      }
 
       const contentText = item.content || '';
       const summaryText = contentText.length > 140 ? `${contentText.slice(0, 140)}...` : contentText;
@@ -87,7 +89,6 @@ export const useFeedLogic = () => {
     });
   }, [rawBroadcasts]);
 
-  // Filter posts based on category selection and search query
   const filteredPosts = useMemo(() => {
     return formattedPosts.filter((post) => {
       const matchesCategory = selectedCategory === 'ALL' || post.category.toLowerCase() === selectedCategory.toLowerCase();
