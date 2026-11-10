@@ -1,77 +1,24 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFeedLogic } from '../../../Backend/Parent/FeedLogic';
+import SkeletonFeed from '../../Shared/loaders/SkeletonFeed';
 
-// Mock Announcements & School Updates Feed Data
-const feedPosts = [
-  {
-    id: 'post-1',
-    title: 'Upcoming Inter-House Sports Competition 2026',
-    category: 'Sports & Wellness',
-    categoryStyle: 'bg-sky-100 text-sky-700 border-sky-200',
-    date: 'OCTOBER 24, 2026',
-    author: 'Sports Committee & Admin',
-    authorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-    summary: 'Our annual Inter-House Sports competition is set for Friday. All pupils are required to attend in their house jerseys!',
-    content: 'We are thrilled to invite all parents and guardians to our annual Inter-House Sports Competition. Pupils should arrive in their house jerseys by 8:00 AM. Refreshments will be available, and special parent races have been scheduled! Let us come together to support our young athletes.',
-    isImportant: true,
-  },
-  {
-    id: 'post-2',
-    title: 'Mid-Term Break Holiday & Resumption Notice',
-    category: 'Academic Calendar',
-    categoryStyle: 'bg-amber-100 text-amber-700 border-amber-200',
-    date: 'OCTOBER 18, 2026',
-    author: 'School Administration',
-    authorAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
-    summary: 'School will be closed for the mid-term holiday from October 29th to November 2nd. Classes resume promptly on Monday.',
-    content: 'Please be informed that Highflyer Kiddies Academy will observe its First Term Mid-Term Break starting Thursday, October 29th. Boarding pupils and day students will resume full academic activities on Monday, November 3rd. Parents are advised to review mid-term homework assignments via the portal.',
-    isImportant: false,
-  },
-  {
-    id: 'post-3',
-    title: 'STEM & Vocational Crafts Exhibition Highlights',
-    category: 'School Events',
-    categoryStyle: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    date: 'OCTOBER 12, 2026',
-    author: 'Ms. Beatrice Adewale',
-    authorAvatar: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
-    summary: 'Our Grade 1 pupils put together incredible vocational safety models and art displays this week.',
-    content: 'Our pupils showcased remarkable creativity during the STEM & Crafts exhibition. From safety warning badge displays in Vocational Studies to color-mixing paintings in Creative Arts, we are extremely proud of their active participation and teamwork!',
-    isImportant: false,
-  },
-  {
-    id: 'post-4',
-    title: 'Parent-Teacher Consultations & Health Safety Guidelines',
-    category: 'Health & Safety',
-    categoryStyle: 'bg-purple-100 text-purple-700 border-purple-200',
-    date: 'OCTOBER 05, 2026',
-    author: 'School Nurse & Admin',
-    authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    summary: 'Important guidelines for upcoming parent consultations and seasonal flu preventative measures.',
-    content: 'As we approach the mid-term evaluations, individual time slots for parent-teacher consultations have been dispatched. Additionally, please ensure your wards bring clean water bottles daily as part of our health precautions.',
-    isImportant: false,
-  },
-];
-
-const categories = ['ALL', 'Sports & Wellness', 'Academic Calendar', 'School Events', 'Health & Safety'];
+const categories = ['ALL', 'Urgent Directive', 'General News', 'School Event'];
 
 const Feed = () => {
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPostModal, setSelectedPostModal] = useState(null);
-
-  // Filter posts by category and search term
-  const filteredPosts = feedPosts.filter((post) => {
-    const matchesCategory = selectedCategory === 'ALL' || post.category === selectedCategory;
-    const matchesSearch =
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.summary.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const {
+    filteredPosts,
+    isLoading,
+    searchQuery,
+    setSearchQuery,
+    selectedCategory,
+    setSelectedCategory,
+    selectedPostModal,
+    setSelectedPostModal,
+  } = useFeedLogic();
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-8 bg-slate-50/60 min-h-screen">
-      
       {/* Top Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
         <div className="flex items-center space-x-4">
@@ -125,7 +72,9 @@ const Feed = () => {
 
       {/* Feed List Section */}
       <div className="space-y-5">
-        {filteredPosts.length > 0 ? (
+        {isLoading ? (
+          <SkeletonFeed />
+        ) : filteredPosts.length > 0 ? (
           filteredPosts.map((post) => (
             <div
               key={post.id}
@@ -213,7 +162,7 @@ const Feed = () => {
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              exit={{ opacity: 0, scale: 0.95, y: 0 }}
               className="relative bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-100 z-10 space-y-6 text-left"
             >
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -234,10 +183,26 @@ const Feed = () => {
                 <h3 className="text-xl font-extrabold text-brand-navy leading-snug">
                   {selectedPostModal.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed pt-2">
+                <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed pt-2 whitespace-pre-line">
                   {selectedPostModal.content}
                 </p>
               </div>
+
+              {selectedPostModal.attachmentUrl && (
+                <div className="pt-2 border-t border-slate-100">
+                  <a
+                    href={selectedPostModal.attachmentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs font-extrabold text-brand-blue hover:underline"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Download Attachment
+                  </a>
+                </div>
+              )}
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -260,7 +225,6 @@ const Feed = () => {
           </div>
         )}
       </AnimatePresence>
-
     </div>
   );
 };
