@@ -52,14 +52,13 @@ export const useParentLoginLogic = () => {
           .from('profiles')
           .select('*')
           .eq('email', emailOrId)
-          .eq('temp_password', password)
-          .maybeSingle();
+          .eq('temp_password', password);
 
-        if (profileErr || !profileMatches) {
+        if (profileErr || !profileMatches || profileMatches.length === 0) {
           throw new Error(authError?.message || 'Invalid credentials. Please check your parent ID/email and password.');
         }
 
-        parentProfile = profileMatches;
+        parentProfile = profileMatches.find(p => p.is_active === false) || profileMatches[0];
       }
 
       if (!parentProfile) {
@@ -68,7 +67,7 @@ export const useParentLoginLogic = () => {
 
       const lookupEmail = parentProfile.email || emailOrId;
 
-      // 2. Fetch ALL pupil wards sharing this parent email
+      // 2. Fetch ALL pupil wards sharing this parent email FIRST
       let { data: matchedChildren, error: queryErr } = await supabaseClient
         .from('profiles')
         .select('*')
@@ -85,7 +84,20 @@ export const useParentLoginLogic = () => {
         }
       }
 
-      // 4. Strict Enforcement: Block if no linked pupils found
+      // 4. Strict Enforcement: Block if parent account is deactivated
+      if (parentProfile.is_active === false) {
+        await supabaseClient.auth.signOut();
+        throw new Error('This parent account has been deactivated by school management.');
+      }
+
+      // 5. Strict Enforcement: Block if any linked pupil ward is deactivated
+      const hasDeactivatedWard = matchedChildren && matchedChildren.some(child => child.is_active === false);
+      if (hasDeactivatedWard) {
+        await supabaseClient.auth.signOut();
+        throw new Error('Access denied: One or more linked pupil wards have been deactivated.');
+      }
+
+      // 6. Strict Enforcement: Block if no linked pupils found
       if (!matchedChildren || matchedChildren.length === 0) {
         throw new Error('Access denied: This email is not linked to any registered pupil ward.');
       }
