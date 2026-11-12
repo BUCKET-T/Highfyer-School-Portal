@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsLogic } from '../../../Backend/Parent/SettingsLogic';
 import SkeletonSettings from '../../Shared/loaders/SkeletonSettings';
 
@@ -18,6 +18,9 @@ const Settings = () => {
     emailNotifs, setEmailNotifs,
     darkMode, setDarkMode,
     savedSuccess,
+    showToast,
+    toastMessage,
+    toastType,
     handleCustomAvatarUpload,
     handleSaveAvatarOnly,
     handlePasswordChange,
@@ -28,8 +31,27 @@ const Settings = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-8 bg-slate-50/60 min-h-screen font-sans">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8 bg-slate-50/60 min-h-screen font-sans relative">
       
+      {/* Toast Notification Banner */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className={`fixed top-6 right-6 z-50 px-5 py-3.5 rounded-2xl shadow-xl text-xs font-extrabold flex items-center space-x-3 border ${
+              toastType === 'error'
+                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            }`}
+          >
+            <span>{toastType === 'error' ? '✕' : '✓'}</span>
+            <span>{toastMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Top Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
         <div className="flex items-center space-x-4">
@@ -155,7 +177,7 @@ const Settings = () => {
               <div className="space-y-4 pb-6 border-b border-slate-100">
                 <div className="space-y-1">
                   <h2 className="text-xl font-extrabold text-brand-navy">Ward Profile Picture</h2>
-                  <p className="text-xs text-slate-500 font-medium">Click the camera icon to upload a picture. Avatar is the only editable field on this page.</p>
+                  <p className="text-xs text-slate-500 font-medium">Click the camera icon to upload a picture (Max 45KB). Avatar is the only editable field on this page.</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-6 pt-2">
@@ -194,7 +216,7 @@ const Settings = () => {
                   <div className="space-y-1 text-center sm:text-left">
                     <h3 className="text-sm font-extrabold text-brand-navy">{profileData.full_name || 'Student Name'}</h3>
                     <p className="text-xs font-semibold text-slate-400">{profileData.grade || 'Class'} Pupil</p>
-                    <p className="text-[11px] text-slate-400 font-medium pt-1">Select a local photo to customize your avatar.</p>
+                    <p className="text-[11px] text-slate-400 font-medium pt-1">Select a local photo under 45KB to customize your avatar.</p>
                   </div>
                 </div>
               </div>
