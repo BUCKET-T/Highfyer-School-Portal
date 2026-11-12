@@ -9,14 +9,19 @@ export const ProtectedRoute = ({ allowedRole }) => {
   useEffect(() => {
     const verifyAccess = async () => {
       try {
+        console.log('--- PROTECTED ROUTE CHECK ---');
+        console.log('Target allowedRole:', allowedRole);
+
         const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
         
         if (sessionError || !session) {
+          console.warn('Auth session failed or missing:', sessionError);
           setIsAuthenticated(false);
           setIsAuthorized(false);
           return;
         }
 
+        console.log('Session found for user ID:', session.user.id);
         setIsAuthenticated(true);
 
         const { data: profile, error: profileError } = await supabaseClient
@@ -25,7 +30,14 @@ export const ProtectedRoute = ({ allowedRole }) => {
           .eq('id', session.user.id)
           .maybeSingle();
 
+        if (profileError) {
+          console.error('Profile fetch error from Supabase:', profileError);
+        }
+
+        console.log('Fetched profile record:', profile);
+
         if (profileError || !profile || profile.is_active === false) {
+          console.warn('Profile invalid or inactive. Signing out.');
           await supabaseClient.auth.signOut();
           setIsAuthorized(false);
           return;
@@ -33,36 +45,31 @@ export const ProtectedRoute = ({ allowedRole }) => {
 
         const userRole = (profile.role || '').toLowerCase();
         const roleTitle = (profile.role_title || '').toLowerCase();
+        console.log('Normalized userRole:', userRole, '| Normalized roleTitle:', roleTitle);
 
         // Role verification logic
+        let authorized = false;
         if (allowedRole === 'educator') {
-          if (userRole !== 'educator') {
-            setIsAuthorized(false);
-            return;
-          }
+          authorized = userRole === 'educator';
         } else if (allowedRole === 'admin') {
-          const isAdmin = 
+          authorized = 
             userRole === 'admin' || 
             userRole === 'super_admin' || 
             roleTitle.includes('admin') || 
             roleTitle.includes('principal');
-          if (!isAdmin) {
-            setIsAuthorized(false);
-            return;
-          }
         } else if (allowedRole === 'pupil') {
-          if (userRole !== 'pupil') {
-            setIsAuthorized(false);
-            return;
-          }
-        } else if (allowedRole && userRole !== allowedRole.toLowerCase()) {
-          setIsAuthorized(false);
-          return;
+          authorized = userRole === 'pupil';
+        } else if (allowedRole === 'parent') {
+          authorized = ['educator', 'guardian', 'pupil'].includes(userRole);
+        } else if (allowedRole) {
+          authorized = userRole === allowedRole.toLowerCase();
         }
 
-        setIsAuthorized(true);
+        console.log('Authorization check result:', authorized);
+        setIsAuthorized(authorized);
+
       } catch (err) {
-        console.error('Route protection error:', err);
+        console.error('Route protection unexpected error:', err);
         setIsAuthenticated(false);
         setIsAuthorized(false);
       }
@@ -86,6 +93,7 @@ export const ProtectedRoute = ({ allowedRole }) => {
     } else if (allowedRole === 'admin') {
       loginPath = '/admin/login';
     }
+    console.warn(`Access denied. Redirecting to: ${loginPath}`);
     return <Navigate to={loginPath} replace />;
   }
 
