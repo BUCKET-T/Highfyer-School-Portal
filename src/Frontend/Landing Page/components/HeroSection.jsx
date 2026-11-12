@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import supabaseClient from '../../../config/supabaseClient';
 
 // Import your student hero image
 import smilingBoyImage from '../../../assets/backiee-188651-landscape.jpg'; 
@@ -43,6 +44,28 @@ const imageVariants = {
 };
 
 const HeroSection = () => {
+  const [activeSession, setActiveSession] = useState('2026/2027');
+
+  useEffect(() => {
+    const fetchActiveSession = async () => {
+      try {
+        const { data, error } = await supabaseClient
+          .from('academic_sessions')
+          .select('session_name')
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (!error && data && data.session_name) {
+          setActiveSession(data.session_name);
+        }
+      } catch (err) {
+        console.error('Failed to fetch active academic session:', err);
+      }
+    };
+
+    fetchActiveSession();
+  }, []);
+
   return (
     <section className="relative bg-brand-navy pt-16 md:pt-24 pb-20 md:pb-28 overflow-hidden">
       {/* Background Decorative Gradient Layer */}
@@ -65,7 +88,7 @@ const HeroSection = () => {
             {/* Pink Badge */}
             <motion.div variants={itemVariants} className="inline-block">
               <span className="bg-brand-coral text-white text-xs md:text-sm font-bold px-5 md:px-6 py-2 rounded-full uppercase tracking-wider shadow-sm">
-                Admissions Open for 2026/2027
+                Admissions Open for {activeSession}
               </span>
             </motion.div>
 

@@ -274,7 +274,7 @@ const Sidebar = () => {
                   type="button"
                   disabled={isLoggingOut}
                   onClick={handleLogout}
-                  className="w-full bg-brand-coral hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl text-xs sm:text-sm shadow-md transition-all cursor-pointer flex items-center justify-center"
+                  className="w-full bg-brand-coral hover:bg-rose-600 disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl text-xs sm:text-sm shadow-md transition-all cursor-pointer flex items-center justify-center"
                 >
                   {isLoggingOut ? 'Logging out...' : 'Yes, Logout'}
                 </button>
