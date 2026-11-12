@@ -44,19 +44,19 @@ export const useStaffLoginLogic = () => {
       if (!authError && authData?.user) {
         authUser = authData.user;
       } else {
-        // 4. Fallback check for temp_password users
+        // 4. Fallback check for temp_password users (scoped to educator role to avoid email collisions)
         const { data: profileMatches, error: profileErr } = await supabaseClient
           .from('profiles')
           .select('*')
           .eq('email', staffIdOrEmail)
           .eq('temp_password', password)
-          .maybeSingle();
+          .eq('role', 'educator');
 
-        if (profileErr || !profileMatches) {
+        if (profileErr || !profileMatches || profileMatches.length === 0) {
           throw new Error(authError?.message || 'Invalid credentials. Please check your email and password.');
         }
 
-        authUser = profileMatches;
+        authUser = profileMatches.find((p) => p.is_active === false) || profileMatches[0];
       }
 
       // 5. Fetch the authentic profile for the logged-in user ID
@@ -77,6 +77,16 @@ export const useStaffLoginLogic = () => {
       if (role !== 'educator') {
         await supabaseClient.auth.signOut();
         throw new Error('Access Denied: This portal is restricted to educators.');
+      }
+
+      // 7. Strict Enforcement: Block login if staff account is deactivated
+      if (
+        userProf.is_active === false ||
+        userProf.is_active === 'false' ||
+        userProf.is_active === 0
+      ) {
+        await supabaseClient.auth.signOut();
+        throw new Error('This staff account has been deactivated by school management. Please contact administration.');
       }
 
       // Parse assigned classes for this specific user
