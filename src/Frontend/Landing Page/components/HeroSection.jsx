@@ -24,21 +24,7 @@ const itemVariants = {
     y: 0,
     transition: {
       duration: 0.6,
-      ease: [0.215, 0.61, 0.355, 1], // Custom smooth cubic-bezier
-    },
-  },
-};
-
-const imageVariants = {
-  hidden: { opacity: 0, scale: 0.92, x: 20 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    x: 0,
-    transition: {
-      duration: 0.8,
-      ease: [0.16, 1, 0.3, 1],
-      delay: 0.3,
+      ease: [0.215, 0.61, 0.355, 1],
     },
   },
 };
@@ -67,27 +53,35 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <section className="relative bg-brand-navy pt-16 md:pt-24 pb-20 md:pb-28 overflow-hidden">
-      {/* Background Decorative Gradient Layer */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-br from-brand-navy via-[#1b3152] to-brand-navy opacity-90" />
+    <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden bg-brand-navy">
+      {/* Background Image with Object Cover */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src={smilingBoyImage} 
+          alt="HighFlyer Kiddies Academy background" 
+          className="w-full h-full object-cover object-center"
+        />
+        {/* Multi-layered Gradient Overlay for High Contrast and Readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-navy/95 via-brand-navy/85 to-brand-navy/60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-navy/90 via-transparent to-brand-navy/40" />
+      </div>
 
-      {/* Decorative Floating Glowing Orbs for Depth */}
-      <div className="absolute -top-24 -left-24 w-96 h-96 bg-brand-blue/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-brand-coral/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Decorative Glow Elements */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-blue/20 rounded-full blur-3xl pointer-events-none z-10" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid md:grid-cols-12 gap-10 items-center">
+      {/* Content Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 w-full py-20 md:py-28">
+        <div className="max-w-3xl space-y-6 md:space-y-8">
           
-          {/* Left Column: Text & CTAs */}
           <motion.div 
-            className="md:col-span-6 space-y-6 md:space-y-8"
+            className="space-y-6 md:space-y-8"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
           >
-            {/* Pink Badge */}
+            {/* Dynamic Pink Badge */}
             <motion.div variants={itemVariants} className="inline-block">
-              <span className="bg-brand-coral text-white text-xs md:text-sm font-bold px-5 md:px-6 py-2 rounded-full uppercase tracking-wider shadow-sm">
+              <span className="bg-brand-coral text-white text-xs md:text-sm font-bold px-5 md:px-6 py-2 rounded-full uppercase tracking-wider shadow-md">
                 Admissions Open for {activeSession}
               </span>
             </motion.div>
@@ -95,16 +89,16 @@ const HeroSection = () => {
             {/* Main Heading */}
             <motion.h1 
               variants={itemVariants}
-              className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1]"
             >
               Planting the <br />
-              <span className="text-brand-blue">Seed of Greatness</span>
+              <span className="text-brand-blue drop-shadow-sm">Seed of Greatness</span>
             </motion.h1>
 
             {/* Descriptive Text */}
             <motion.p 
               variants={itemVariants}
-              className="text-base md:text-lg text-slate-300 max-w-lg leading-relaxed font-normal"
+              className="text-base sm:text-lg md:text-xl text-slate-200 max-w-2xl leading-relaxed font-normal"
             >
               Providing exceptional early childhood education in a nurturing environment that fosters curiosity, creativity, and confidence.
             </motion.p>
@@ -112,47 +106,26 @@ const HeroSection = () => {
             {/* Call-to-Action Buttons */}
             <motion.div 
               variants={itemVariants}
-              className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-4"
+              className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-4"
             >
-              {/* Enroll Now -> Redirects to Contact section */}
               <motion.a 
                 href="#contact" 
                 whileHover={{ scale: 1.03, y: -2 }}
                 whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center justify-center space-x-2 bg-brand-blue hover:bg-blue-600 text-white font-semibold px-10 py-3 rounded-xl shadow-button hover:shadow-lg transition-colors duration-200"
+                className="inline-flex items-center justify-center space-x-2 bg-brand-blue hover:bg-blue-600 text-white font-semibold px-10 py-3.5 rounded-xl shadow-lg hover:shadow-blue-500/25 transition-all duration-200 text-center"
               >
                 Enroll Now
               </motion.a>
 
-              {/* Our Philosophy Button -> Smooth scrolls to #philosophy */}
               <motion.a 
                 href="#philosophy"
                 whileHover={{ scale: 1.03, y: -2 }}
                 whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center justify-center space-x-2 border-2 border-white/80 hover:bg-white/10 text-white font-medium px-10 py-3 rounded-xl transition-colors duration-200"
+                className="inline-flex items-center justify-center space-x-2 border-2 border-white/80 hover:bg-white/10 text-white font-medium px-10 py-3.5 rounded-xl transition-all duration-200 text-center backdrop-blur-sm"
               >
                 Our Philosophy
               </motion.a>
             </motion.div>
-          </motion.div>
-
-          {/* Right Column: Animated Student Image */}
-          <motion.div 
-            className="md:col-span-6 relative flex justify-end"
-            variants={imageVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <div className="relative w-full max-w-lg">
-              <img 
-                src={smilingBoyImage} 
-                alt="Smiling student in uniform with tie" 
-                className="w-full h-auto rounded-3xl shadow-dropdown border border-slate-700/50 object-cover"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            </div>
           </motion.div>
 
         </div>
