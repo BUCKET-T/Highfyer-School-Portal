@@ -8,7 +8,6 @@ export const useSidebarLogic = () => {
     avatar: ''
   });
   const [hasPendingApprovals, setHasPendingApprovals] = useState(false);
-  const [hasNewBroadcast, setHasNewBroadcast] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchSidebarData = useCallback(async () => {
@@ -39,44 +38,18 @@ export const useSidebarLogic = () => {
         }
       }
 
-      // 3. Check for Pending Academic Approvals
-      const { data: recentApprovals, error: approvalErr } = await supabaseClient
+      // 3. Check for Pending Academic Approvals (Strict live count check)
+      const { count, error: approvalErr } = await supabaseClient
         .from('academic_approvals')
-        .select('submitted_at, status')
-        .ilike('status', 'PENDING')
-        .order('submitted_at', { ascending: false })
-        .limit(1);
+        .select('*', { count: 'exact', head: true })
+        .ilike('status', 'PENDING');
 
       if (approvalErr) {
         console.error("Supabase approval fetch error:", approvalErr.message);
       }
 
-      if (recentApprovals && recentApprovals.length > 0) {
-        const latestApprovalTime = new Date(recentApprovals[0].submitted_at).getTime();
-        const storedViewedTime = localStorage.getItem('approvals_viewed_at');
-        const viewedApprovalTime = storedViewedTime ? new Date(storedViewedTime).getTime() : 0;
-
-        setHasPendingApprovals(latestApprovalTime > viewedApprovalTime);
-      } else {
-        setHasPendingApprovals(false);
-      }
-
-      // 4. Check for Recent School Broadcasts
-      const { data: recentBroadcasts } = await supabaseClient
-        .from('school_broadcasts')
-        .select('created_at')
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (recentBroadcasts && recentBroadcasts.length > 0) {
-        const latestBroadcastTime = new Date(recentBroadcasts[0].created_at).getTime();
-        const storedViewedTime = localStorage.getItem('broadcasts_viewed_at');
-        const viewedBroadcastTime = storedViewedTime ? new Date(storedViewedTime).getTime() : 0;
-
-        setHasNewBroadcast(latestBroadcastTime > viewedBroadcastTime);
-      } else {
-        setHasNewBroadcast(false);
-      }
+      // Display badge indicator only if there are pending approvals awaiting review
+      setHasPendingApprovals(count !== null && count > 0);
 
     } catch (err) {
       console.error('Error loading sidebar data:', err.message);
@@ -98,13 +71,6 @@ export const useSidebarLogic = () => {
           fetchSidebarData();
         }
       )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'school_broadcasts' },
-        () => {
-          fetchSidebarData();
-        }
-      )
       .subscribe();
 
     return () => {
@@ -112,15 +78,9 @@ export const useSidebarLogic = () => {
     };
   }, [fetchSidebarData]);
 
-  // Handlers to clear dots when components are opened
+  // Handlers
   const handleOpenApprovals = () => {
-    setHasPendingApprovals(false);
-    localStorage.setItem('approvals_viewed_at', new Date().toISOString());
-  };
-
-  const handleOpenBroadcasts = () => {
-    setHasNewBroadcast(false);
-    localStorage.setItem('broadcasts_viewed_at', new Date().toISOString());
+    // Optional: Keep or clear depending on your UI navigation workflow
   };
 
   // Secure Logout Handler
@@ -139,9 +99,7 @@ export const useSidebarLogic = () => {
   return {
     adminProfile,
     hasPendingApprovals,
-    hasNewBroadcast,
     handleOpenApprovals,
-    handleOpenBroadcasts,
     handleLogout,
     isLoading
   };
