@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 
+// Import Security Guard
+import { ProtectedRoute } from "../../../config/ProtectedRoute";
+
 // Import Staff Sidebar Component
 import StaffSidebar from "../Components/StaffSidebar";
 
@@ -38,27 +41,25 @@ const StaffLayout = () => {
 const OperatorStaff = () => {
   return (
     <Routes>
-      {/* Default route redirects to staff dashboard or login */}
-      <Route path="/" element={<Navigate to="dashboard" replace />} />
+      {/* Default route redirects to login */}
+      <Route path="/" element={<Navigate to="login" replace />} />
 
-      {/* Standalone Login Route (No Sidebar) */}
+      {/* Standalone Public Login Route (No Protection) */}
       <Route path="login" element={<LoginEffect />} />
 
-      {/* Authenticated Staff Portal Layout Group */}
-      <Route element={<StaffLayout />}>
-        <Route path="dashboard" element={<StaffDashboard />} />
-
-        {/* Placeholder routes for upcoming staff pages */}
-        <Route path="attendance" element={<Attendance />} />
-        <Route path="gradebook" element={<Gradebook />} />
-        <Route path="assignments" element={<ManageAssignments />} />
-        <Route path="roster" element={<ClassRoster />} />
-        <Route path="feed" element={<StaffFeed />} />
-        <Route path="settings" element={<StaffSettings />} />
+      {/* Authenticated Staff Portal (Guarded by ProtectedRoute) */}
+      <Route element={<ProtectedRoute allowedRole="educator" />}>
+        <Route element={<StaffLayout />}>
+          <Route path="dashboard" element={<StaffDashboard />} />
+          <Route path="attendance" element={<Attendance />} />
+          <Route path="gradebook" element={<Gradebook />} />
+          <Route path="assignments" element={<ManageAssignments />} />
+          <Route path="roster" element={<ClassRoster />} />
+          <Route path="feed" element={<StaffFeed />} />
+          <Route path="settings" element={<StaffSettings />} />
+          <Route path="*" element={<Navigate to="dashboard" replace />} />
+        </Route>
       </Route>
-
-      {/* Fallback for unmapped staff paths */}
-      <Route path="*" element={<Navigate to="dashboard" replace />} />
     </Routes>
   );
 };

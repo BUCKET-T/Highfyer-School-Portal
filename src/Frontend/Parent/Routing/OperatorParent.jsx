@@ -1,6 +1,9 @@
 import React from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 
+// Import Security Guard
+import { ProtectedRoute } from "../../../config/ProtectedRoute";
+
 // Import Login view
 import LoginEffect from "../../Landing Page/Auth/LoginEffect";
 
@@ -33,17 +36,19 @@ const OperatorParent = () => {
       {/* Default redirect to login page */}
       <Route path="/" element={<Navigate to="login" replace />} />
 
-      {/* Standalone Login Route (No Sidebar) */}
+      {/* Standalone Public Login Route (No Protection) */}
       <Route path="login" element={<LoginEffect />} />
 
-      {/* Authenticated Parent Portal (Wrapped with Responsive Layout) */}
-      <Route element={<ParentLayout />}>
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="courses" element={<MyCourses />} />
-        <Route path="assignments" element={<Assignments />} />
-        <Route path="results" element={<Results />} />
-        <Route path="feed" element={<Feed />} />
-        <Route path="settings" element={<Settings />} />
+      {/* Authenticated Parent Portal (Guarded by ProtectedRoute) */}
+      <Route element={<ProtectedRoute allowedRole="parent" />}>
+        <Route element={<ParentLayout />}>
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="courses" element={<MyCourses />} />
+          <Route path="assignments" element={<Assignments />} />
+          <Route path="results" element={<Results />} />
+          <Route path="feed" element={<Feed />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
       </Route>
 
       {/* Fallback for unmapped parent paths */}
