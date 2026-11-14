@@ -1,4 +1,4 @@
-import React from 'react';
+import {React, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 // Replace with the path to your Proprietress image in your assets folder
@@ -88,6 +88,10 @@ const coreValues = [
 ];
 
 const AboutSection = () => {
+    //Title
+        useEffect(() => {
+        document.title = "About us | Highflyer kiddies Academy";
+      }, []);
   return (
     <section id="about" className="py-20 md:py-28 bg-white relative overflow-hidden">
       {/* Background Subtle Gradient Overlay */}

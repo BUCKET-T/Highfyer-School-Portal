@@ -12,6 +12,7 @@ export const useParentDashboardLogic = () => {
   const [classEducator, setClassEducator] = useState(null);
   const [liveGrades, setLiveGrades] = useState([]);
   const [liveAssignments, setLiveAssignments] = useState([]);
+  const [activeAssignmentsCount, setActiveAssignmentsCount] = useState(0);
   const [liveAttendance, setLiveAttendance] = useState(0);
   const [isDataLoading, setIsDataLoading] = useState(true);
 
@@ -91,17 +92,35 @@ export const useParentDashboardLogic = () => {
 
         setLiveGrades(gradesData || []);
 
-        // 3. Fetch Assignments matching the ward's grade level
+        // 3. Fetch Assignments matching the ward's grade level and apply date-aware active filtering
         if (currentWard.grade) {
           const { data: assignmentsData } = await supabaseClient
             .from('assignments')
             .select('*')
-            .ilike('grade_level', `%${currentWard.grade}%`)
-            .eq('status', 'ACTIVE');
+            .ilike('grade_level', `%${currentWard.grade}%`);
 
-          setLiveAssignments(assignmentsData || []);
+          const allAssignments = assignmentsData || [];
+          const currentDate = new Date('2026-11-14');
+
+          // Process and separate into active vs closed based on due_date
+          const processedAssignments = allAssignments.map((task) => {
+            const dueDateTime = task.due_date ? new Date(task.due_date) : null;
+            const isOverdueOrClosed = dueDateTime && dueDateTime < currentDate;
+
+            return {
+              ...task,
+              status: isOverdueOrClosed ? 'closed' : 'pending',
+            };
+          });
+
+          // Filter for active/pending tasks to display on the dashboard card & widget
+          const activeTasks = processedAssignments.filter((task) => task.status === 'pending');
+
+          setLiveAssignments(activeTasks);
+          setActiveAssignmentsCount(activeTasks.length);
         } else {
           setLiveAssignments([]);
+          setActiveAssignmentsCount(0);
         }
 
         // 4. Fetch Attendance records for this ward (cumulative calculation per term)
@@ -111,7 +130,6 @@ export const useParentDashboardLogic = () => {
           .eq('pupil_id', currentWard.id);
 
         if (attendanceData && attendanceData.length > 0) {
-          // You can filter by term if needed (e.g. .eq('term', 'Term 3'))
           const totalDays = attendanceData.length;
           const presentDays = attendanceData.filter(
             (a) => a.status === 'PRESENT' || a.status === 'Present' || a.is_present === true
@@ -120,7 +138,7 @@ export const useParentDashboardLogic = () => {
           const cumulativeRate = Math.round((presentDays / totalDays) * 100);
           setLiveAttendance(cumulativeRate);
         } else {
-          setLiveAttendance(0); // Resets to 0% if no attendance records exist for the term
+          setLiveAttendance(0);
         }
 
       } catch (err) {
@@ -177,6 +195,7 @@ export const useParentDashboardLogic = () => {
     classEducator,
     liveGrades,
     liveAssignments,
+    activeAssignmentsCount,
     liveAttendance,
     overallProgress,
     handleSelectWard,

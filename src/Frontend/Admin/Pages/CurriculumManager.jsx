@@ -1,4 +1,4 @@
-import React from 'react';
+import {React, useEffect }from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BookOpen, Plus, Trash2, Upload, FileText, Check, 
@@ -10,6 +10,10 @@ import Spinner from '../../Shared/loaders/Spinner';
 import SkeletonCurriculumManager from '../../Shared/Admin/SkeletonCurriculumManager';
 
 const CurriculumManager = () => {
+    //Title
+      useEffect(() => {
+      document.title = "Curriculum | Highflyer kiddies Academy";
+    }, []);
   const {
     selectedGrade, setSelectedGrade,
     selectedTerm, setSelectedTerm,
@@ -51,9 +55,10 @@ const CurriculumManager = () => {
         </div>
 
         <button
+          type="button"
           onClick={handleSaveCurriculum}
           disabled={saving}
-          className="bg-[#121B2D] hover:bg-slate-800 disabled:opacity-50 text-white font-extrabold px-6 py-3 rounded-2xl text-xs sm:text-sm shadow-xl shadow-slate-900/20 transition-all cursor-pointer flex items-center space-x-2"
+          className="bg-[#121B2D] hover:bg-slate-800 disabled:opacity-50 text-white font-extrabold px-6 py-3 rounded-2xl text-xs sm:text-sm shadow-xl shadow-slate-900/20 transition-all cursor-pointer flex items-center justify-center space-x-2"
         >
           {saving ? <Spinner size="sm" /> : <Save size={16} />}
           <span>{saving ? 'Saving...' : 'Save Curriculum'}</span>
@@ -75,11 +80,11 @@ const CurriculumManager = () => {
             }}
             className="w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-2xl px-4 py-3 text-xs font-bold text-slate-800 flex items-center justify-between transition-colors cursor-pointer shadow-inner"
           >
-            <span className="flex items-center space-x-2">
-              <Sparkles size={14} className="text-sky-500" />
-              <span>{selectedGrade}</span>
+            <span className="flex items-center space-x-2 truncate">
+              <Sparkles size={14} className="text-sky-500 flex-shrink-0" />
+              <span className="truncate">{selectedGrade}</span>
             </span>
-            <ChevronDown size={16} className={`text-slate-400 transition-transform ${isGradeDropdownOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={16} className={`text-slate-400 transition-transform flex-shrink-0 ml-2 ${isGradeDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
           <AnimatePresence>
@@ -123,8 +128,8 @@ const CurriculumManager = () => {
             }}
             className="w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-2xl px-4 py-3 text-xs font-bold text-slate-800 flex items-center justify-between transition-colors cursor-pointer shadow-inner"
           >
-            <span>{selectedTerm}</span>
-            <ChevronDown size={16} className={`text-slate-400 transition-transform ${isTermDropdownOpen ? 'rotate-180' : ''}`} />
+            <span className="truncate">{selectedTerm}</span>
+            <ChevronDown size={16} className={`text-slate-400 transition-transform flex-shrink-0 ml-2 ${isTermDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
           <AnimatePresence>
@@ -168,8 +173,8 @@ const CurriculumManager = () => {
             }}
             className="w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-2xl px-4 py-3 text-xs font-bold text-slate-800 flex items-center justify-between transition-colors cursor-pointer shadow-inner"
           >
-            <span>{selectedSubject}</span>
-            <ChevronDown size={16} className={`text-slate-400 transition-transform ${isSubjectDropdownOpen ? 'rotate-180' : ''}`} />
+            <span className="truncate">{selectedSubject}</span>
+            <ChevronDown size={16} className={`text-slate-400 transition-transform flex-shrink-0 ml-2 ${isSubjectDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
           <AnimatePresence>
@@ -211,13 +216,13 @@ const CurriculumManager = () => {
           
           {/* 12-Week Term Planner */}
           <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-2">
               <div className="flex items-center space-x-2.5">
-                <Calendar size={18} className="text-sky-500" />
+                <Calendar size={18} className="text-sky-500 flex-shrink-0" />
                 <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">12-Week Term Syllabus Planner</h3>
               </div>
-              <span className="px-3 py-1 bg-sky-50 text-sky-600 text-xs font-extrabold rounded-full">
-                {selectedGrade} • {selectedSubject}
+              <span className="px-3 py-1 bg-sky-50 text-sky-600 text-xs font-extrabold rounded-full self-start sm:self-auto">
+                {selectedGrade} - {selectedSubject}
               </span>
             </div>
 
@@ -258,7 +263,7 @@ const CurriculumManager = () => {
           <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center space-x-2.5">
-                <Layers size={18} className="text-sky-500" />
+                <Layers size={18} className="text-sky-500 flex-shrink-0" />
                 <h3 className="text-base font-black text-slate-900">General Learning Objectives</h3>
               </div>
               <span className="px-3 py-1 bg-sky-50 text-sky-600 text-xs font-extrabold rounded-full">
@@ -266,7 +271,8 @@ const CurriculumManager = () => {
               </span>
             </div>
 
-            <form onSubmit={handleAddObjective} className="flex items-center space-x-3">
+            {/* FIXED: Form layout changed from flex-row to flex-col on mobile so the button never clips */}
+            <form onSubmit={handleAddObjective} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <input
                 type="text"
                 value={newObjective}
@@ -276,7 +282,7 @@ const CurriculumManager = () => {
               />
               <button
                 type="submit"
-                className="bg-sky-500 hover:bg-sky-600 text-white font-extrabold px-5 py-3 rounded-2xl text-xs shadow-md transition-all cursor-pointer flex items-center space-x-1.5 flex-shrink-0"
+                className="bg-sky-500 hover:bg-sky-600 text-white font-extrabold px-5 py-3 rounded-2xl text-xs shadow-md transition-all cursor-pointer flex items-center justify-center space-x-1.5 flex-shrink-0"
               >
                 <Plus size={16} />
                 <span>Add Objective</span>
@@ -292,7 +298,7 @@ const CurriculumManager = () => {
                 learningObjectives.map((objective, index) => (
                   <div 
                     key={index}
-                    className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between"
+                    className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between gap-3"
                   >
                     <div className="flex items-start space-x-3 text-left">
                       <span className="w-6 h-6 rounded-lg bg-white border border-slate-200 text-sky-600 text-[11px] font-black flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -319,7 +325,7 @@ const CurriculumManager = () => {
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-5">
             <div className="flex items-center space-x-2.5">
-              <FileText size={18} className="text-sky-500" />
+              <FileText size={18} className="text-sky-500 flex-shrink-0" />
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">PDF Syllabus Attachment</h3>
             </div>
 
@@ -336,7 +342,7 @@ const CurriculumManager = () => {
                   <div className="overflow-hidden">
                     <h4 className="text-xs font-black text-slate-900 truncate">{pdfFileName}</h4>
                     <span className="text-[10px] font-extrabold text-emerald-600 flex items-center space-x-1 pt-0.5">
-                      <CheckCircle2 size={12} />
+                      <CheckCircle2 size={12} className="flex-shrink-0" />
                       <span>Attached & Ready</span>
                     </span>
                   </div>
@@ -346,21 +352,21 @@ const CurriculumManager = () => {
                   <button
                     type="button"
                     onClick={() => alert(`Opening document: ${pdfFileName}`)}
-                    className="flex-1 bg-white hover:bg-slate-50 text-sky-600 border border-slate-200 text-center py-2 rounded-xl text-xs font-black transition-colors cursor-pointer"
+                    className="flex-1 bg-white hover:bg-slate-50 text-sky-600 border border-slate-200 text-center py-2 rounded-xl text-xs font-black transition-colors cursor-pointer truncate px-2"
                   >
                     View Document
                   </button>
                   <button
                     type="button"
                     onClick={() => setPdfFileName('')}
-                    className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                    className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer flex-shrink-0"
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
               </div>
             ) : (
-              <label className="border-2 border-dashed border-slate-200 hover:border-sky-400 p-6 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-colors space-y-2 bg-slate-50/50">
+              <label className="border-2 border-dashed border-slate-200 hover:border-sky-400 p-6 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-colors space-y-2 bg-slate-50/50 text-center">
                 <Upload size={24} className="text-slate-400" />
                 <span className="text-xs font-bold text-slate-700">Click to upload PDF Syllabus</span>
                 <span className="text-[10px] font-medium text-slate-400">PDF up to 10MB</span>

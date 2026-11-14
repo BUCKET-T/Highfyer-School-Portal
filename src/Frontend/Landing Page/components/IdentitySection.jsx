@@ -1,4 +1,4 @@
-import React from 'react';
+import {React, useEffect} from 'react';
 import { motion } from 'framer-motion';
 
 // Replace these paths with your local uniform showcase images or assets
@@ -43,6 +43,11 @@ const cardLeftVariants = {
 };
 
 const IdentitySection = () => {
+    //Title
+      useEffect(() => {
+      document.title = "Identity | Highflyer kiddies Academy";
+    }, []);
+    
   return (
     <section id="identity" className="py-20 md:py-28 bg-brand-navy text-white relative overflow-hidden">
       {/* Background Subtle Gradient Glows */}
