@@ -37,8 +37,7 @@ const Assignments = () => {
     activeTab,
     setActiveTab,
     pendingCount,
-    completedCount,
-    overdueCount,
+    closedCount,
     selectedTaskForSubmission,
     setSelectedTaskForSubmission,
     submissionNote,
@@ -75,13 +74,13 @@ const Assignments = () => {
         <div className="flex items-center space-x-2 bg-slate-100/80 px-3.5 py-2.5 rounded-2xl border border-slate-200/60 self-start md:self-auto">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">WARD:</span>
           <span className="text-xs font-extrabold text-white bg-brand-navy px-2.5 py-0.5 rounded-lg uppercase">
-            {currentWard.full_name} - {currentWard.grade || 'Grade'}
+            {currentWard.full_name} — {currentWard.grade || 'Grade'}
           </span>
         </div>
       </div>
 
       {/* Metric Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         
         {/* Pending Card */}
         <div className="bg-white p-6 rounded-3xl border-b-4 border-b-sky-400 shadow-sm border border-slate-100 flex items-center space-x-4">
@@ -92,33 +91,20 @@ const Assignments = () => {
           </div>
           <div>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">PENDING</p>
-            <h2 className="text-2xl font-extrabold text-brand-navy">{pendingCount} Tasks</h2>
+            <h2 className="text-2xl font-extrabold text-brand-navy">{pendingCount} Task{pendingCount !== 1 ? 's' : ''}</h2>
           </div>
         </div>
 
-        {/* Completed Card */}
-        <div className="bg-white p-6 rounded-3xl border-b-4 border-b-emerald-400 shadow-sm border border-slate-100 flex items-center space-x-4">
-          <div className="w-12 h-12 bg-emerald-100 text-emerald-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+        {/* Closed Card */}
+        <div className="bg-white p-6 rounded-3xl border-b-4 border-b-slate-400 shadow-sm border border-slate-100 flex items-center space-x-4">
+          <div className="w-12 h-12 bg-slate-100 text-slate-600 rounded-2xl flex items-center justify-center flex-shrink-0">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
           <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">COMPLETED</p>
-            <h2 className="text-2xl font-extrabold text-brand-navy">{completedCount} Tasks</h2>
-          </div>
-        </div>
-
-        {/* Overdue Card */}
-        <div className="bg-white p-6 rounded-3xl border-b-4 border-b-brand-coral shadow-sm border border-slate-100 flex items-center space-x-4">
-          <div className="w-12 h-12 bg-brand-coral/10 text-brand-coral rounded-2xl flex items-center justify-center flex-shrink-0">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">OVERDUE</p>
-            <h2 className="text-2xl font-extrabold text-brand-navy">{overdueCount} Task{overdueCount !== 1 ? 's' : ''}</h2>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">CLOSED </p>
+            <h2 className="text-2xl font-extrabold text-brand-navy">{closedCount} Task{closedCount !== 1 ? 's' : ''}</h2>
           </div>
         </div>
 
@@ -140,7 +126,7 @@ const Assignments = () => {
                   : 'text-slate-500 hover:text-brand-navy'
               }`}
             >
-              ACTIVE
+              PENDING
             </button>
             <button
               type="button"
@@ -151,7 +137,7 @@ const Assignments = () => {
                   : 'text-slate-500 hover:text-brand-navy'
               }`}
             >
-              ARCHIVE
+              CLOSED
             </button>
           </div>
         </div>
@@ -225,13 +211,9 @@ const Assignments = () => {
                     )}
 
                     {task.status === 'overdue' && (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTaskForSubmission(task)}
-                        className="bg-brand-coral hover:bg-orange-600 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs transition-all shadow-sm cursor-pointer"
-                      >
-                        Finish Now
-                      </button>
+                      <span className="bg-slate-100 text-slate-500 border border-slate-200 font-extrabold px-4 py-2 rounded-xl text-xs flex items-center space-x-1">
+                        <span> Past Due</span>
+                      </span>
                     )}
 
                     {task.status === 'completed' && (
@@ -253,11 +235,11 @@ const Assignments = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
               </div>
-              <h3 className="text-base font-extrabold text-brand-navy">No {activeTab.toLowerCase()} tasks found</h3>
+              <h3 className="text-base font-extrabold text-brand-navy">No {activeTab === 'ACTIVE' ? 'pending' : 'closed'} tasks found</h3>
               <p className="text-xs text-slate-500 max-w-sm">
                 {activeTab === 'ACTIVE'
-                  ? `No pending assignments found for ${currentWard.full_name} (${currentWard.grade || 'Grade'}). Check the Archive tab for past submissions.`
-                  : 'There are no archived assignment submissions yet.'}
+                  ? `No pending assignments found for ${currentWard.full_name} (${currentWard.grade || 'Grade'}). Check the Closed tab for past or completed tasks.`
+                  : 'There are no closed or completed assignment submissions yet.'}
               </p>
             </div>
           )}

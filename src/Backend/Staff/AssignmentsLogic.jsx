@@ -59,6 +59,16 @@ export const useAssignmentsLogic = () => {
     return 'bg-rose-100 text-rose-700';
   };
 
+  // Helper to check if a due date has passed
+  const isPastDue = (dueDateStr) => {
+    if (!dueDateStr) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(dueDateStr);
+    due.setHours(0, 0, 0, 0);
+    return due < today;
+  };
+
   // Sync class dynamically if switched elsewhere in the session
   useEffect(() => {
     const handleStorageChange = () => {
@@ -89,17 +99,25 @@ export const useAssignmentsLogic = () => {
       if (assignmentsData) {
         const formatted = assignmentsData.map((item) => {
           const createdDate = item.created_at ? new Date(item.created_at).toLocaleDateString() : 'RECENT';
-          const dueDate = item.due_date ? new Date(item.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+          const dueDateObj = item.due_date ? new Date(item.due_date) : null;
+          const dueDateText = dueDateObj ? dueDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+
+          let currentStatus = (item.status || 'ACTIVE').toUpperCase();
+          
+          // Automatically mark as CLOSED/Completed if the due date has passed
+          if (currentStatus === 'ACTIVE' && item.due_date && isPastDue(item.due_date)) {
+            currentStatus = 'CLOSED';
+          }
 
           return {
             id: item.id,
             title: item.title,
             subject: (item.subject || 'GENERAL').toUpperCase(),
-            status: (item.status || 'ACTIVE').toUpperCase(),
+            status: currentStatus,
             subjectTagColor: getSubjectTagColor(item.subject),
-            statusTagColor: getStatusTagColor(item.status),
+            statusTagColor: getStatusTagColor(currentStatus),
             createdText: `CREATED ${createdDate}`,
-            dueText: `DUE ${dueDate}`,
+            dueText: `DUE ${dueDateText}`,
             guidelines: item.description || 'No guidelines provided.'
           };
         });

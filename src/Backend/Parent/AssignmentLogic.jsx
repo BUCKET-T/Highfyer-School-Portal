@@ -14,6 +14,16 @@ export const useAssignmentLogic = () => {
   const [selectedTaskForSubmission, setSelectedTaskForSubmission] = useState(null);
   const [submissionNote, setSubmissionNote] = useState('');
 
+  // Helper to check if a due date has passed
+  const isPastDue = (dueDateStr) => {
+    if (!dueDateStr) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(dueDateStr);
+    due.setHours(0, 0, 0, 0);
+    return due < today;
+  };
+
   // Synchronize active ward with localStorage shared across dashboard tabs
   useEffect(() => {
     const fetchSessionWards = async () => {
@@ -90,7 +100,15 @@ export const useAssignmentLogic = () => {
           });
 
           const formattedTasks = matchedAssignments.map((task) => {
-            const statusVal = (task.status || 'pending').toLowerCase();
+            let statusVal = (task.status || 'pending').toLowerCase();
+            
+            // If it's pending/active but the due date has passed, mark it as overdue/archived
+            if (statusVal !== 'completed' && task.due_date && isPastDue(task.due_date)) {
+              statusVal = 'overdue';
+            }
+
+            const isArchived = statusVal === 'completed' || statusVal === 'overdue' || statusVal === 'archived';
+
             return {
               id: task.id,
               subject: (task.subject || 'GENERAL').toUpperCase(),
@@ -100,7 +118,7 @@ export const useAssignmentLogic = () => {
               dueDate: task.due_date ? new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Due Soon',
               dueTime: task.due_date ? new Date(task.due_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'BY 4:00 PM',
               status: statusVal,
-              isArchived: statusVal === 'completed' || statusVal === 'archived',
+              isArchived,
             };
           });
 
