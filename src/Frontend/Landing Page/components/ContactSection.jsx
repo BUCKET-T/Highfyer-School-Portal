@@ -35,7 +35,9 @@ const ContactSection = () => {
     message: '',
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleChange = (e) => {
     setFormData({
@@ -44,14 +46,42 @@ const ContactSection = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulate form submission
-    setIsSubmitted(true);
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFormData({ parentName: '', email: '', childAge: '', message: '' });
-    }, 4000);
+    setIsSubmitting(true);
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('https://formspree.io/f/xkjroknd', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.parentName,
+          email: formData.email,
+          childAge: formData.childAge,
+          message: formData.message,
+        }),
+      });
+
+      if (response.ok) {
+        setIsSubmitted(true);
+        setFormData({ parentName: '', email: '', childAge: '', message: '' });
+      } else {
+        const data = await response.json();
+        if (data && data.errors) {
+          setErrorMessage(data.errors.map((error) => error.message).join(', '));
+        } else {
+          setErrorMessage('Oops! There was a problem submitting your form. Please try again.');
+        }
+      }
+    } catch (err) {
+      setErrorMessage('Network error. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -149,6 +179,13 @@ const ContactSection = () => {
                 <p className="text-slate-600 max-w-md mx-auto">
                   Thank you for reaching out to HighFlyer Kiddies Academy. Our admissions officer will get back to you shortly.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setIsSubmitted(false)}
+                  className="mt-4 bg-brand-navy text-white text-xs font-bold px-6 py-2.5 rounded-xl hover:bg-[#1d3764] transition-all cursor-pointer"
+                >
+                  Send Another Message
+                </button>
               </motion.div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -164,7 +201,7 @@ const ContactSection = () => {
                       required
                       value={formData.parentName}
                       onChange={handleChange}
-                      placeholder=" Parent name"
+                      placeholder="Parent name"
                       className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all"
                     />
                   </div>
@@ -179,7 +216,7 @@ const ContactSection = () => {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      placeholder=" parent@example.com"
+                      placeholder="parent@example.com"
                       className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all"
                     />
                   </div>
@@ -217,14 +254,31 @@ const ContactSection = () => {
                   ></textarea>
                 </div>
 
+                {errorMessage && (
+                  <p className="text-xs font-bold text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-100">
+                    {errorMessage}
+                  </p>
+                )}
+
                 {/* Submit Button */}
                 <motion.button
                   type="submit"
+                  disabled={isSubmitting}
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full bg-brand-navy hover:bg-[#1d3764] text-white font-bold py-4 rounded-xl shadow-lg transition-colors duration-200"
+                  className="w-full bg-brand-navy hover:bg-[#1d3764] text-white font-bold py-4 rounded-xl shadow-lg transition-colors duration-200 cursor-pointer disabled:opacity-60 flex items-center justify-center space-x-2"
                 >
-                  Send Message
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Sending Message...</span>
+                    </>
+                  ) : (
+                    <span>Send Message</span>
+                  )}
                 </motion.button>
               </form>
             )}
