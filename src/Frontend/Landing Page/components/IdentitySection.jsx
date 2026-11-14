@@ -2,8 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 // Replace these paths with your local uniform showcase images or assets
-import boyUniformImg from '../../../assets/backiee-219805-landscape.jpg';
-import girlUniformImg from '../../../assets/audi-r26-concept-7680x4320-24663.jpg'; 
+import boyUniformImg from '../../../assets/Male attire.jfif';
+import girlUniformImg from '../../../assets/new.jpg'; 
 
 // Variants for Header (Flowing in from the right)
 const headerVariants = {

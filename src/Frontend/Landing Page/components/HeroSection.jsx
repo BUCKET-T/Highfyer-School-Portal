@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import supabaseClient from '../../../config/supabaseClient';
 
 // Import your student hero image
-import smilingBoyImage from '../../../assets/backiee-188651-landscape.jpg'; 
+import smilingBoyImage from '../../../assets/Hero section shot.jfif'; 
 
 // Animation Variants
 const containerVariants = {
