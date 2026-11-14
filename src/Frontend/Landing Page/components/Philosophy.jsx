@@ -1,4 +1,4 @@
-import React from 'react';
+import {React, useEffect} from 'react';
 import { motion } from 'framer-motion';
 
 const corePillars = [
@@ -58,6 +58,11 @@ const cardVariants = {
 };
 
 const Philosophy = () => {
+    //Title
+      useEffect(() => {
+      document.title = "Philosophy | Highflyer kiddies Academy";
+    }, []);
+  
   return (
     <section id="philosophy" className="py-20 md:py-28 bg-white relative overflow-hidden">
       {/* Background Decorative Blur Circle */}

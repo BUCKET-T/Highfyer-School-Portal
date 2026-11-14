@@ -1,9 +1,10 @@
-import React from 'react';
+import { React, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAssignmentLogic } from '../../../Backend/Parent/AssignmentLogic';
 import SkeletonAssignments from '../../Shared/loaders/SkeletonAssignments';
 
 const getSubjectStyles = (subject) => {
+  
   const subj = (subject || '').toUpperCase();
   if (subj.includes('MATH')) {
     return {
@@ -29,6 +30,11 @@ const getSubjectStyles = (subject) => {
 };
 
 const Assignments = () => {
+        //Title
+          useEffect(() => {
+          document.title = "Assignments | Highflyer kiddies Academy";
+        }, []);
+  
   const {
     currentWard,
     isLoading,

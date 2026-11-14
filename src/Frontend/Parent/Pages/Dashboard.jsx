@@ -1,9 +1,14 @@
-import React from 'react';
+import { React, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParentDashboardLogic } from '../../../Backend/Parent/ParentDashboardLogic';
 import SkeletonDashboard from '../../Shared/loaders/SkeletonDashboard';
 
 const Dashboard = () => {
+      //Title
+        useEffect(() => {
+        document.title = "Dashboard | Highflyer kiddies Academy";
+      }, []);
+
   const {
     wards,
     currentWard,

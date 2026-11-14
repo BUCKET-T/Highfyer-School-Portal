@@ -1,9 +1,14 @@
-import React from 'react';
+import { React, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsLogic } from '../../../Backend/Parent/SettingsLogic';
 import SkeletonSettings from '../../Shared/loaders/SkeletonSettings';
 
 const Settings = () => {
+        //Title
+          useEffect(() => {
+          document.title = "Settings | Highflyer kiddies Academy";
+        }, []);
+  
   const {
     activeTab, setActiveTab,
     isLoading, isSaving,

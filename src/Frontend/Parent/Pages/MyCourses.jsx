@@ -1,9 +1,14 @@
-import React from 'react';
+import { React, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMyCourseLogic } from '../../../Backend/Parent/MyCourseLogic';
 import SkeletonMyCourse from '../../Shared/loaders/SkeletonMyCourse';
 
 const MyCourses = () => {
+      //Title
+        useEffect(() => {
+        document.title = "My courses | Highflyer kiddies Academy";
+      }, []);
+
   const {
     currentWard,
     isLoading,

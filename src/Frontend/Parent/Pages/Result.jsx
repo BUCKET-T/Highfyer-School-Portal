@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ResponsiveContainer,
@@ -30,6 +30,11 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 const Results = () => {
+        //Title
+          useEffect(() => {
+          document.title = "Results | Highflyer kiddies Academy";
+        }, []);
+  
   const {
     currentWard,
     isLoading,

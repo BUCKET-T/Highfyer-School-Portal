@@ -1,4 +1,4 @@
-import React from 'react';
+import { React, useEffect }from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFeedLogic } from '../../../Backend/Parent/FeedLogic';
 import SkeletonFeed from '../../Shared/loaders/SkeletonFeed';
@@ -6,6 +6,11 @@ import SkeletonFeed from '../../Shared/loaders/SkeletonFeed';
 const categories = ['ALL', 'Urgent Directive', 'General News', 'School Event'];
 
 const Feed = () => {
+        //Title
+          useEffect(() => {
+          document.title = "Feed | Highflyer kiddies Academy";
+        }, []);
+  
   const {
     filteredPosts,
     isLoading,
