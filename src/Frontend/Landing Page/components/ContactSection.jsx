@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState} from 'react';
 import { motion } from 'framer-motion';
 
 // Animation Variants
@@ -28,10 +28,7 @@ const rightColumnVariants = {
 };
 
 const ContactSection = () => {
-    //Title
-        useEffect(() => {
-        document.title = "Contact | Highflyer kiddies Academy";
-      }, []);
+
   const [formData, setFormData] = useState({
     parentName: '',
     email: '',

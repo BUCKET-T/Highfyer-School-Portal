@@ -1,4 +1,4 @@
-import {React, useEffect} from 'react';
+import {React} from 'react';
 import { motion } from 'framer-motion';
 
 const curriculumData = [
@@ -82,10 +82,6 @@ const cardVariants = {
 };
 
 const CurriculumSection = () => {
-      //Title
-        useEffect(() => {
-        document.title = "Curriculum | Highflyer kiddies Academy";
-      }, []);
 
   return (
     <section id="curriculum" className="py-20 md:py-28 bg-slate-50 relative overflow-hidden">
