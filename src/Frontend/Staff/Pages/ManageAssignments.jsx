@@ -4,6 +4,11 @@ import { useAssignmentsLogic } from '../../../Backend/Staff/AssignmentsLogic';
 import SkeletonAssignments from '../../Shared/Staff/SkeletonAssignments';
 
 const ManageAssignments = () => {
+          //Title
+          useEffect(() => {
+          document.title = "Manage Assignments | Highflyer kiddies Academy";
+        }, []);
+
   const {
     filteredAssignments,
     isLoading,

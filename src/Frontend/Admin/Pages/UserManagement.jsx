@@ -1,4 +1,4 @@
-import React from 'react';
+import { React, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   UserPlus, 
@@ -21,6 +21,11 @@ import Spinner from '../../Shared/loaders/Spinner';
 import SkeletonUserManagement from '../../Shared/Admin/SkeletonUserManagement';
 
 const UserManagement = () => {
+          //Title
+          useEffect(() => {
+          document.title = "User Management| Highflyer kiddies Academy";
+        }, []);
+
   const {
     activeTab,
     setActiveTab,

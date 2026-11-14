@@ -1,8 +1,13 @@
-import React from 'react';
+import { React, useEffect } from 'react';
 import { useStaffFeedLogic } from '../../../Backend/Staff/StaffFeedLogic';
 import SkeletonStaffFeed from '../../Shared/Staff/SkeletonStaffFeed';
 
 const StaffFeed = () => {
+          //Title
+          useEffect(() => {
+          document.title = "Staff Feed | Highflyer kiddies Academy";
+        }, []);
+
   const {
     upcomingMeetings,
     isLoading,

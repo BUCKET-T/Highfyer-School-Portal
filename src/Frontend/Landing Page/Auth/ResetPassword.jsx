@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -10,6 +10,11 @@ import schoolLogo from '../../../assets/logo.png';
 import supabaseClient from '../../../config/supabaseClient';
 
 const ResetPassword = () => {
+          //Title
+          useEffect(() => {
+          document.title = "Reset Password | Highflyer kiddies Academy";
+        }, []);
+
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);

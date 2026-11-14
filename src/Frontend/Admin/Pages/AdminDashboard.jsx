@@ -1,4 +1,4 @@
-import React from 'react';
+import { React, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -17,6 +17,11 @@ import { useAdminDashboardLogic } from '../../../Backend/Admin/AdminDashboardLog
 import SkeletonAdminDashboard from '../../Shared/Admin/SkeletonAdminDashboard';
 
 const AdminDashboard = () => {
+          //Title
+          useEffect(() => {
+          document.title = "Admin Dashboard | Highflyer kiddies Academy";
+        }, []);
+
   const navigate = useNavigate();
   const {
     activeSessionText,

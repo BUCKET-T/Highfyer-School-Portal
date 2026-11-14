@@ -1,4 +1,4 @@
-import React from 'react';
+import { React, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ClipboardCheck, 
@@ -24,6 +24,11 @@ import { useAcademicApprovalLogic } from '../../../Backend/Admin/AcademicApprova
 import SkeletonAcademicApprovals from '../../Shared/Admin/SkeletonAcademicApprovals';
 
 const AcademicApprovals = () => {
+          //Title
+          useEffect(() => {
+          document.title = "Academic Approvals | Highflyer kiddies Academy";
+        }, []);
+
   const {
     activeFilter,
     setActiveFilter,

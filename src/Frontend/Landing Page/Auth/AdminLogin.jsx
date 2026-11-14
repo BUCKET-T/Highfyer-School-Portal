@@ -1,4 +1,4 @@
-import React from 'react';
+import { React, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -12,6 +12,11 @@ import Spinner from '../../Shared/loaders/Spinner';
 import schoolLogo from '../../../assets/logo.png';
 
 const AdminLogin = () => {
+          //Title
+            useEffect(() => {
+            document.title = "Admin Login | Highflyer kiddies Academy";
+          }, []);
+  
   const navigate = useNavigate();
   const {
     adminEmail,

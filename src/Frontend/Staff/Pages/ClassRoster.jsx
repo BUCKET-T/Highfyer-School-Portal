@@ -1,10 +1,15 @@
-import React from 'react';
+import { React, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useClassRosterLogic } from '../../../Backend/Staff/ClassRosterLogic';
 import SkeletonClassRoster from '../../Shared/Staff/SkeletonClassRoster';
 import Spinner from '../../Shared/loaders/Spinner';
 
 const ClassRoster = () => {
+          //Title
+          useEffect(() => {
+          document.title = "Class Roster | Highflyer kiddies Academy";
+        }, []);
+
   const {
     educatorClass,
     isLoading,

@@ -12,7 +12,7 @@ import SkeletonCurriculumManager from '../../Shared/Admin/SkeletonCurriculumMana
 const CurriculumManager = () => {
     //Title
       useEffect(() => {
-      document.title = "Curriculum | Highflyer kiddies Academy";
+      document.title = "Curriculum Manager| Highflyer kiddies Academy";
     }, []);
   const {
     selectedGrade, setSelectedGrade,

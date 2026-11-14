@@ -1,4 +1,4 @@
-import React from 'react';
+import { React, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStaffSettingsLogic } from '../../../Backend/Staff/StaffSettingsLogic';
 
@@ -6,6 +6,11 @@ import { useStaffSettingsLogic } from '../../../Backend/Staff/StaffSettingsLogic
 import SkeletonStaffSettings from '../../Shared/Staff/SkeletonStaffSettings';
 
 const StaffSettings = () => {
+          //Title
+          useEffect(() => {
+          document.title = "Staff Settings | Highflyer kiddies Academy";
+        }, []);
+
   const {
     activeTab,
     setActiveTab,

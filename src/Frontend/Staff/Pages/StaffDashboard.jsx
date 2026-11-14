@@ -5,6 +5,11 @@ import { useStaffDashboardLogic } from '../../../Backend/Staff/StaffDashboardLog
 import SkeletonDashboard from '../../Shared/Staff/SkeletonDashboard';
 
 const StaffDashboard = () => {
+          //Title
+          useEffect(() => {
+          document.title = "Staff Dashboard | Highflyer kiddies Academy";
+        }, []);
+
   const navigate = useNavigate();
   const {
     userProfile,

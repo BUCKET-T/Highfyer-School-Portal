@@ -4,6 +4,11 @@ import { useAttendanceLogic } from '../../../Backend/Staff/AttendanceLogic';
 import SkeletonAttendance from '../../Shared/Staff/SkeletonAttendance';
 
 const Attendance = () => {
+          //Title
+          useEffect(() => {
+          document.title = "Attendance | Highflyer kiddies Academy";
+        }, []);
+
   const {
     filteredGrades, isLoading, isSaving,
     selectedDate, setSelectedDate, educatorClass, currentTerm, academicSession,

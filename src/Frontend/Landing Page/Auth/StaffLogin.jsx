@@ -1,4 +1,4 @@
-import React from 'react';
+import { React,useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -12,6 +12,11 @@ import Spinner from '../../Shared/loaders/Spinner';
 import schoolLogo from '../../../assets/logo.png';
 
 const StaffLogin = () => {
+          //Title
+          useEffect(() => {
+          document.title = "Staff Login | Highflyer kiddies Academy";
+        }, []);
+
   const {
     staffIdOrEmail,
     setStaffIdOrEmail,

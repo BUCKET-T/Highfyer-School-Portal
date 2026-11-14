@@ -1,4 +1,4 @@
-import React from 'react';
+import { React, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Megaphone, 
@@ -18,6 +18,11 @@ import Spinner from '../../Shared/loaders/Spinner';
 import SkeletonSchoolBroadcasts from '../../Shared/Admin/SkeletonSchoolBroadcasts';
 
 const SchoolBroadcasts = () => {
+          //Title
+          useEffect(() => {
+          document.title = "School Broadcasts | Highflyer kiddies Academy";
+        }, []);
+
   const {
     targetAudience, setTargetAudience,
     category, setCategory,

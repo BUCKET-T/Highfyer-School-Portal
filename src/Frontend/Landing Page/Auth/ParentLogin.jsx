@@ -1,4 +1,4 @@
-import React from 'react';
+import { React,useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -12,6 +12,11 @@ import Spinner from '../../Shared/loaders/Spinner';
 import schoolLogo from '../../../assets/logo.png';
 
 const ParentLogin = () => {
+          //Title
+          useEffect(() => {
+          document.title = "Parent Login | Highflyer kiddies Academy";
+        }, []);
+
   const {
     emailOrId,
     setEmailOrId,

@@ -1,4 +1,4 @@
-import React from 'react';
+import { React, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User,
@@ -21,6 +21,10 @@ import { useAdminSettingsLogic } from '../../../Backend/Admin/AdminSettingsLogic
 import SkeletonAdminSettings from '../../Shared/Admin/SkeletonAdminSettings';
 
 const AdminSettings = () => {
+          //Title
+          useEffect(() => {
+          document.title = "Admin settings | Highflyer kiddies Academy";
+        }, []);
 
   const {
     activeTab, setActiveTab,

@@ -3,6 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGradebookLogic } from '../../../Backend/Staff/GradebookLogic';
 
 const Gradebook = () => {
+          //Title
+          useEffect(() => {
+          document.title = "Gradebook | Highflyer kiddies Academy";
+        }, []);
+
   const {
     selectedSubject,
     setSelectedSubject,
